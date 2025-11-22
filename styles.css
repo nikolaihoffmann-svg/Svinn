@@ -1,48 +1,43 @@
 :root {
-  /* Farger – mørkt (standard) */
-  --bg: #07131a;
-  --bg-soft: #0d1c24;
-  --bg-softer: #12232d;
-  --fg: #fdf7ec;
-  --fg-soft: #c9d2dd;
+  /* Nøytral mørk default */
+  --bg: #050712;
+  --bg-soft: #0c101c;
+  --bg-softer: #111827;
+  --fg: #f9fafb;
+  --fg-soft: #9ca3af;
 
-  --accent: #f28c2b; /* oransje – sparegris */
-  --accent-soft: rgba(242, 140, 43, 0.14);
+  /* Brandfarge = sparegris-oransje */
+  --brand: #f28a1a;
 
-  --primary: #fdf7ec;
-  --primary-soft: rgba(253, 247, 236, 0.06);
+  --accent: #f28a1a;
+  --accent-soft: rgba(242, 138, 26, 0.12);
+  --danger: #f97373;
+  --danger-soft: rgba(249, 115, 115, 0.14);
 
-  --pill-bg: #0f2029;
-  --pill-bg-active: #fdf7ec;
-  --pill-fg-active: #062018;
-
-  --danger: #ff4c6a;
-  --danger-soft: rgba(255, 76, 106, 0.16);
-
-  --border-soft: rgba(255, 255, 255, 0.08);
-  --shadow-soft: 0 22px 60px rgba(0, 0, 0, 0.65);
+  --border-soft: rgba(148, 163, 184, 0.25);
+  --pill-bg: #111827;
+  --pill-bg-active: #f9fafb;
+  --pill-fg-active: #020617;
+  --shadow-soft: 0 18px 40px rgba(0, 0, 0, 0.55);
   --radius-lg: 18px;
   --radius-pill: 999px;
   --transition-fast: 0.18s ease-out;
 }
 
-/* Lys modus (html.light) */
+/* Lys modus – nøytral og ren */
 html.light {
-  --bg: #f5f1e8;
-  --bg-soft: #fdf7ec;
-  --bg-softer: #f0e6d5;
-  --fg: #082014;
-  --fg-soft: #596268;
+  --bg: #f4f4f5;
+  --bg-soft: #ffffff;
+  --bg-softer: #e5e7eb;
+  --fg: #0f172a;
+  --fg-soft: #6b7280;
 
-  --primary: #082014;
-  --primary-soft: rgba(8, 32, 20, 0.06);
-
-  --pill-bg: #efe1cb;
-  --pill-bg-active: #082014;
-  --pill-fg-active: #fdf7ec;
-
-  --border-soft: rgba(12, 32, 24, 0.12);
-  --shadow-soft: 0 18px 45px rgba(38, 45, 50, 0.12);
+  --accent-soft: rgba(242, 138, 26, 0.10);
+  --border-soft: rgba(148, 163, 184, 0.35);
+  --pill-bg: #e5e7eb;
+  --pill-bg-active: #111827;
+  --pill-fg-active: #f9fafb;
+  --shadow-soft: 0 14px 30px rgba(15, 23, 42, 0.18);
 }
 
 *,
@@ -54,12 +49,7 @@ html.light {
 body {
   margin: 0;
   min-height: 100vh;
-  background: radial-gradient(
-      circle at top left,
-      rgba(242, 140, 43, 0.12),
-      transparent 55%
-    ),
-    var(--bg);
+  background: radial-gradient(circle at top, #111827 0, var(--bg) 60%, #020617 100%);
   color: var(--fg);
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
     sans-serif;
@@ -80,37 +70,32 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 16px;
-  padding: 10px 12px;
-  border-radius: 20px;
-  background: linear-gradient(
-    135deg,
-    var(--bg-soft),
-    rgba(10, 45, 37, 0.96)
-  );
+  margin-bottom: 14px;
+  padding: 14px 14px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.7));
   box-shadow: var(--shadow-soft);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(148, 163, 184, 0.3);
 }
 
-html.light .app-header {
-  background: linear-gradient(
-    135deg,
-    var(--bg-soft),
-    rgba(245, 232, 210, 0.98)
-  );
+/* Brand-tekst i samme farge som sparegrisen */
+
+#app-title,
+#app-subtitle {
+  color: var(--brand);
 }
 
-.title-block h1 {
+.title-block h1#app-title {
   margin: 0;
-  font-size: 24px;
+  font-size: 26px;
   letter-spacing: 0.02em;
-  color: var(--primary);
+  font-weight: 700;
 }
 
-.title-block p {
+.title-block p#app-subtitle {
   margin: 4px 0 0;
   font-size: 13px;
-  color: var(--fg-soft);
+  font-weight: 500;
 }
 
 .header-actions {
@@ -140,12 +125,11 @@ html.light .app-header {
 
 .icon-btn:hover {
   background: var(--bg-softer);
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.3);
+  border-color: rgba(148, 163, 184, 0.6);
 }
 
 .icon-btn:active {
   transform: scale(0.95);
-  box-shadow: none;
 }
 
 .pill-btn {
@@ -194,7 +178,7 @@ html.light .app-header {
   display: flex;
   gap: 8px;
   overflow-x: auto;
-  margin: 10px 0 8px;
+  margin: 12px 0 10px;
 }
 
 .nav-pill {
@@ -230,11 +214,11 @@ html.light .app-header {
   font-size: 13px;
   cursor: pointer;
   transition: background var(--transition-fast), color var(--transition-fast),
-    transform var(--transition-fast), box-shadow var(--transition-fast);
+    transform var(--transition-fast);
 }
 
 .tab-pill:hover {
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25);
+  background: var(--bg-softer);
 }
 
 .tab-active {
@@ -246,7 +230,7 @@ html.light .app-header {
 /* Search */
 
 .search-section {
-  margin-top: 4px;
+  margin-top: 6px;
 }
 
 #search-input {
@@ -254,13 +238,9 @@ html.light .app-header {
   border-radius: var(--radius-pill);
   border: 1px solid var(--border-soft);
   padding: 9px 14px;
-  background: rgba(8, 13, 20, 0.9);
+  background: rgba(15, 23, 42, 0.9);
   color: var(--fg);
   font-size: 13px;
-}
-
-html.light #search-input {
-  background: #f5ebdb;
 }
 
 /* Category bar */
@@ -277,14 +257,10 @@ html.light #search-input {
   padding: 5px 10px;
   font-size: 11px;
   border: 1px solid var(--border-soft);
-  background: rgba(8, 23, 20, 0.8);
+  background: rgba(15, 23, 42, 0.8);
   color: var(--fg-soft);
   white-space: nowrap;
   cursor: pointer;
-}
-
-html.light .category-chip {
-  background: #f5ebdb;
 }
 
 .category-chip-active {
@@ -311,20 +287,11 @@ html.light .category-chip {
 }
 
 .card {
-  border-radius: 20px;
-  background: radial-gradient(
-      circle at top left,
-      rgba(242, 140, 43, 0.08),
-      transparent 50%
-    ),
-    var(--bg-soft);
+  border-radius: var(--radius-lg);
+  background: radial-gradient(circle at top left, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.8));
   border: 1px solid var(--border-soft);
   padding: 12px 12px 10px;
   box-shadow: var(--shadow-soft);
-}
-
-html.light .card {
-  background: #fdf3e2;
 }
 
 .card-header {
@@ -337,7 +304,6 @@ html.light .card {
 .card-title {
   margin: 0;
   font-size: 16px;
-  color: var(--primary);
 }
 
 .card-price {
@@ -368,22 +334,18 @@ html.light .card {
 .badge-green {
   background: var(--accent-soft);
   color: var(--accent);
-  border-color: rgba(242, 140, 43, 0.55);
+  border-color: rgba(242, 138, 26, 0.5);
 }
 
 .badge-grey {
-  background: rgba(10, 24, 20, 0.7);
+  background: rgba(15, 23, 42, 0.7);
   color: var(--fg-soft);
-}
-
-html.light .badge-grey {
-  background: #efe1cb;
 }
 
 .badge-red {
   background: var(--danger-soft);
   color: var(--danger);
-  border-color: rgba(255, 76, 106, 0.55);
+  border-color: rgba(249, 115, 115, 0.5);
 }
 
 .card-actions-row {
@@ -399,7 +361,7 @@ html.light .badge-grey {
   padding: 6px 10px;
   font-size: 11px;
   cursor: pointer;
-  background: var(--pill-bg);
+  background: #111827;
   color: var(--fg-soft);
 }
 
@@ -417,9 +379,9 @@ html.light .badge-grey {
 
 .image-thumb {
   margin-top: 6px;
-  border-radius: 14px;
+  border-radius: 12px;
   overflow: hidden;
-  max-height: 190px;
+  max-height: 170px;
 }
 
 .image-thumb img {
@@ -431,15 +393,11 @@ html.light .badge-grey {
 /* Overview */
 
 .overview-card {
-  border-radius: 20px;
+  border-radius: var(--radius-lg);
   background: var(--bg-soft);
   border: 1px solid var(--border-soft);
   padding: 14px 14px 12px;
   box-shadow: var(--shadow-soft);
-}
-
-html.light .overview-card {
-  background: #fdf3e2;
 }
 
 .overview-card h2 {
@@ -459,7 +417,7 @@ html.light .overview-card {
 /* Requests */
 
 .request-card {
-  border-radius: 18px;
+  border-radius: var(--radius-lg);
   background: var(--bg-soft);
   border: 1px solid var(--border-soft);
   padding: 10px 12px;
@@ -497,16 +455,12 @@ html.light .overview-card {
   top: 50%;
   transform: translate(-50%, -50%);
   background: var(--bg-soft);
-  border-radius: 22px;
+  border-radius: 20px;
   border: 1px solid var(--border-soft);
   width: min(460px, 92vw);
   max-height: 80vh;
   padding: 16px 16px 12px;
   box-shadow: var(--shadow-soft);
-}
-
-html.light .modal-content {
-  background: #fdf3e2;
 }
 
 .modal-scroll {
@@ -533,14 +487,8 @@ html.light .modal-content {
   border: 1px solid var(--border-soft);
   padding: 8px 10px;
   font-size: 13px;
-  background: rgba(7, 16, 22, 0.96);
+  background: rgba(15, 23, 42, 0.95);
   color: var(--fg);
-}
-
-html.light .modal-content input,
-html.light .modal-content textarea {
-  background: #f5ebdb;
-  color: #082014;
 }
 
 .modal-content small {
@@ -585,14 +533,14 @@ html.light .modal-content textarea {
   position: fixed;
   right: 18px;
   bottom: 22px;
-  width: 58px;
-  height: 58px;
+  width: 54px;
+  height: 54px;
   border-radius: 999px;
   border: none;
-  background: var(--accent);
-  color: #082014;
-  font-size: 30px;
-  box-shadow: 0 24px 50px rgba(242, 140, 43, 0.55);
+  background: #f28a1a;
+  color: #020617;
+  font-size: 26px;
+  box-shadow: 0 24px 45px rgba(0, 0, 0, 0.4);
   cursor: pointer;
   display: flex;
   align-items: center;
