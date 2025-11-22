@@ -45,6 +45,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const settingsCloseBtn = document.getElementById("settings-close-btn");
   const exportBtn = document.getElementById("export-btn");
 
+  const gotoSalesBtn = document.getElementById("goto-sales");
+  const gotoListBtn = document.getElementById("goto-list");
+  const gotoOverviewBtn = document.getElementById("goto-overview");
+
   let currentFilter = "active";
   let currentSalesCategoryKey = "all";
   let salesSearchQuery = "";
@@ -126,6 +130,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
   exportBtn.addEventListener("click", () => {
     exportData();
+  });
+
+  gotoSalesBtn.addEventListener("click", () => {
+    showView("sales");
+    closeSettings();
+  });
+
+  gotoListBtn.addEventListener("click", () => {
+    showView("list");
+    closeSettings();
+  });
+
+  gotoOverviewBtn.addEventListener("click", () => {
+    showView("overview");
+    closeSettings();
   });
 
   // Lagre skjema (vare)
@@ -227,9 +246,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const blob = new Blob([JSON.stringify(data, null, 2)], {
       type: "application/json"
     });
-    const url = URL.createObjectURL(blob);
     const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
     const a = document.createElement("a");
+    const url = URL.createObjectURL(blob);
     a.href = url;
     a.download = `salg-app-backup-${today}.json`;
     document.body.appendChild(a);
@@ -494,7 +513,7 @@ document.addEventListener("DOMContentLoaded", () => {
     formTitle.textContent = "Rediger ting";
     idInput.value = item.id;
     titleInput.value = item.title;
-    priceInput.value = item.price || "";
+    priceInput.value = item.price ?? "";
     categoryInput.value = item.category || "";
     descInput.value = item.description || "";
     imageInput.value = "";
@@ -508,21 +527,23 @@ document.addEventListener("DOMContentLoaded", () => {
     itemPanel.classList.add("hidden");
   }
 
+  // Lagre vare (tillater tomme felter, med fallback-tittel)
   function saveItemFromForm() {
     const id = idInput.value || Date.now().toString();
-    const title = titleInput.value.trim();
-    const price = Number(priceInput.value || 0);
-    const category = categoryInput.value.trim();
-    const categoryKey = category ? category.toLowerCase() : "";
-    const description = descInput.value.trim();
-    const imageData = imageDataInput.value || "";
-    const isSold = soldInput.checked;
-    const location = locationInput.value.trim();
 
-    if (!title) {
-      alert("Tittel kan ikke være tom.");
-      return;
-    }
+    const rawTitle = titleInput.value || "";
+    const title = rawTitle.trim() || "Uten tittel";
+
+    const priceValue = priceInput.value;
+    const price = priceValue === "" ? null : Number(priceValue);
+
+    const category = (categoryInput.value || "").trim();
+    const categoryKey = category ? category.toLowerCase() : "";
+
+    const description = (descInput.value || "").trim();
+    const imageData = imageDataInput.value || "";
+    const isSold = !!soldInput.checked;
+    const location = (locationInput.value || "").trim();
 
     const existingIndex = items.findIndex(i => i.id === id);
     const now = new Date().toISOString();
@@ -734,11 +755,26 @@ document.addEventListener("DOMContentLoaded", () => {
     const metaEl = document.createElement("div");
     metaEl.className = "card-meta";
     let metaText = "";
-    if (item.category) metaText += `Kategori: ${item.category}`;
+    if (item.createdAt) metaText += `Lagt ut: ${formatDate(item.createdAt)}`;
     if (item.location) metaText += (metaText ? "\n" : "") + `Lagerplass: ${item.location}`;
-    if (item.createdAt) metaText += (metaText ? "\n" : "") + `Lagt ut: ${formatDate(item.createdAt)}`;
     metaEl.textContent = metaText;
 
+    const badges = document.createElement("div");
+    badges.className = "badges";
+
+    const statusBadge = document.createElement("span");
+    statusBadge.className = "badge badge-active";
+    statusBadge.textContent = "Til salgs";
+    badges.appendChild(statusBadge);
+
+    if (item.category) {
+      const catBadge = document.createElement("span");
+      catBadge.className = "badge";
+      catBadge.textContent = item.category;
+      badges.appendChild(catBadge);
+    }
+
+    // Hele kortet åpner detaljvisning (ingen rediger/slett på salgssiden)
     card.addEventListener("click", () => {
       openDetail(item);
     });
@@ -746,6 +782,7 @@ document.addEventListener("DOMContentLoaded", () => {
     body.appendChild(headerRow);
     if (item.description) body.appendChild(descEl);
     if (metaText) body.appendChild(metaEl);
+    body.appendChild(badges);
 
     card.appendChild(imageWrap);
     card.appendChild(body);
