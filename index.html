@@ -3,24 +3,25 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SVINN</title>
+  <title>EkstraVerdi</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <div class="app-shell">
     <header class="app-header">
       <div class="title-block">
-        <h1 id="app-title">💰 SVINN💸</h1>
-        <p id="app-subtitle">Enkel oversikt over alt jeg selger</p>
+        <h1 id="app-title">EkstraVerdi</h1>
+        <p id="app-subtitle">Ting du ikke trenger. EkstraVerdi gjør dem til penger.</p>
       </div>
       <div class="header-actions">
+        <button id="settings-btn" class="icon-btn" aria-label="Innstillinger">⚙️</button>
         <button id="theme-toggle" class="icon-btn" aria-label="Bytt tema">🌙</button>
         <button id="login-btn" class="pill-btn pill-small">Logg inn</button>
       </div>
     </header>
 
     <main class="app-main">
-      <!-- Admin-nav (skjules for gjester) -->
+      <!-- Admin-nav (skjult for gjester) -->
       <nav id="admin-nav" class="admin-nav hidden">
         <button data-view="market" class="nav-pill nav-pill-active">Salgsside</button>
         <button data-view="list" class="nav-pill">Liste (admin)</button>
@@ -73,7 +74,7 @@
   </div>
 
   <!-- Modal: Logg inn -->
-  <div id="login-modal" class="modal hidden">
+  <div id="login-modal" class="modal">
     <div class="modal-backdrop"></div>
     <div class="modal-content">
       <h2>Logg inn (admin)</h2>
@@ -92,11 +93,34 @@
     </div>
   </div>
 
+  <!-- Modal: Innstillinger (overskrift + tekst under) -->
+  <div id="settings-modal" class="modal">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+      <h2>Innstillinger</h2>
+
+      <label>
+        Overskrift
+        <input id="settings-title" type="text" />
+      </label>
+
+      <label>
+        Tekst under overskrift
+        <input id="settings-subtitle" type="text" />
+      </label>
+
+      <div class="modal-actions">
+        <button id="settings-cancel" class="pill-btn pill-ghost">Avbryt</button>
+        <button id="settings-save" class="pill-btn">Lagre</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal: Ny / rediger vare -->
-  <div id="item-modal" class="modal hidden">
+  <div id="item-modal" class="modal">
     <div class="modal-backdrop"></div>
     <div class="modal-content modal-scroll">
-      <h2 id="item-modal-title">Ny ting</h2>
+      <h2 id="item-modal-title">Ny vare</h2>
       <label>
         Tittel
         <input id="item-title" type="text" />
@@ -139,7 +163,7 @@
   </div>
 
   <!-- Modal: Detaljer + “send forespørsel” for kunder -->
-  <div id="details-modal" class="modal hidden">
+  <div id="details-modal" class="modal">
     <div class="modal-backdrop"></div>
     <div class="modal-content modal-scroll">
       <div id="details-content"></div>
