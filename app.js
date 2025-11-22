@@ -13,6 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const idInput = document.getElementById("item-id");
   const titleInput = document.getElementById("item-title");
   const priceInput = document.getElementById("item-price");
+  const categoryInput = document.getElementById("item-category");
   const descInput = document.getElementById("item-description");
   const imageInput = document.getElementById("item-image");
   const imageDataInput = document.getElementById("item-image-data");
@@ -24,12 +25,19 @@ document.addEventListener("DOMContentLoaded", () => {
   const tabButtons = document.querySelectorAll(".tab-btn");
   const viewList = document.getElementById("view-list");
   const viewOverview = document.getElementById("view-overview");
+  const viewSales = document.getElementById("view-sales");
   const overviewContent = document.getElementById("overview-content");
 
   const detailView = document.getElementById("detail-view");
   const themeToggle = document.getElementById("theme-toggle");
 
+  const salesListEl = document.getElementById("sales-list");
+  const salesCategoriesEl = document.getElementById("sales-categories");
+  const salesSearchInput = document.getElementById("sales-search");
+
   let currentFilter = "active";
+  let currentSalesCategoryKey = "all";
+  let salesSearchQuery = "";
 
   // THEME
   initTheme();
@@ -40,6 +48,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Render
   renderList();
   renderOverview();
+  renderSales();
 
   // Sjekk om vi har itemId i URL (for delt lenke)
   handleItemFromUrl();
@@ -65,7 +74,7 @@ document.addEventListener("DOMContentLoaded", () => {
     reader.readAsDataURL(file);
   });
 
-  // Filterknapper
+  // Filterknapper (adminliste)
   filterButtons.forEach(btn => {
     btn.addEventListener("click", () => {
       filterButtons.forEach(b => b.classList.remove("active"));
@@ -75,7 +84,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // Tabs (liste / oversikt)
+  // Tabs
   tabButtons.forEach(btn => {
     btn.addEventListener("click", () => {
       tabButtons.forEach(b => b.classList.remove("active"));
@@ -85,10 +94,17 @@ document.addEventListener("DOMContentLoaded", () => {
       if (view === "list") {
         viewList.classList.remove("hidden");
         viewOverview.classList.add("hidden");
-      } else {
+        viewSales.classList.add("hidden");
+      } else if (view === "overview") {
         viewList.classList.add("hidden");
         viewOverview.classList.remove("hidden");
+        viewSales.classList.add("hidden");
         renderOverview();
+      } else if (view === "sales") {
+        viewList.classList.add("hidden");
+        viewOverview.classList.add("hidden");
+        viewSales.classList.remove("hidden");
+        renderSales();
       }
     });
   });
@@ -100,12 +116,20 @@ document.addEventListener("DOMContentLoaded", () => {
     localStorage.setItem(THEME_KEY, isDark ? "dark" : "light");
   });
 
+  // Søk på salgsside
+  salesSearchInput.addEventListener("input", e => {
+    salesSearchQuery = (e.target.value || "").toLowerCase().trim();
+    renderSales();
+  });
+
   // Lagre skjema
   form.addEventListener("submit", e => {
     e.preventDefault();
     const id = idInput.value || Date.now().toString();
     const title = titleInput.value.trim();
     const price = Number(priceInput.value || 0);
+    const category = categoryInput.value.trim();
+    const categoryKey = category ? category.toLowerCase() : "";
     const description = descInput.value.trim();
     const imageData = imageDataInput.value || "";
     const isSold = soldInput.checked;
@@ -141,6 +165,8 @@ document.addEventListener("DOMContentLoaded", () => {
         imageData: imageData || existing.imageData,
         isSold,
         location,
+        category,
+        categoryKey,
         soldAt,
         updatedAt: now
       };
@@ -154,6 +180,8 @@ document.addEventListener("DOMContentLoaded", () => {
         imageData,
         isSold,
         location,
+        category,
+        categoryKey,
         createdAt: now,
         updatedAt: now,
         soldAt: isSold ? now : null
@@ -163,6 +191,7 @@ document.addEventListener("DOMContentLoaded", () => {
     saveItems();
     renderList();
     renderOverview();
+    renderSales();
     closeForm();
   });
 
@@ -211,6 +240,8 @@ document.addEventListener("DOMContentLoaded", () => {
     return value.toLocaleString("nb-NO") + " kr";
   }
 
+  // ADMINLISTE (LISTE-TAB)
+
   function renderList() {
     listEl.innerHTML = "";
 
@@ -234,12 +265,12 @@ document.addEventListener("DOMContentLoaded", () => {
       .slice()
       .sort((a, b) => new Date(b.createdAt || b.updatedAt || 0) - new Date(a.createdAt || a.updatedAt || 0))
       .forEach(item => {
-        const card = createCard(item);
+        const card = createAdminCard(item);
         listEl.appendChild(card);
       });
   }
 
-  function createCard(item) {
+  function createAdminCard(item) {
     const card = document.createElement("article");
     card.className = "card";
 
@@ -289,6 +320,13 @@ document.addEventListener("DOMContentLoaded", () => {
     statusBadge.textContent = item.isSold ? "Solgt" : "Til salgs";
     badges.appendChild(statusBadge);
 
+    if (item.category) {
+      const catBadge = document.createElement("span");
+      catBadge.className = "badge";
+      catBadge.textContent = item.category;
+      badges.appendChild(catBadge);
+    }
+
     const actions = document.createElement("div");
     actions.className = "card-actions";
 
@@ -329,6 +367,7 @@ document.addEventListener("DOMContentLoaded", () => {
         saveItems();
         renderList();
         renderOverview();
+        renderSales();
       }
     });
 
@@ -376,6 +415,7 @@ document.addEventListener("DOMContentLoaded", () => {
     saveItems();
     renderList();
     renderOverview();
+    renderSales();
   }
 
   function openFormForNew() {
@@ -383,6 +423,7 @@ document.addEventListener("DOMContentLoaded", () => {
     idInput.value = "";
     titleInput.value = "";
     priceInput.value = "";
+    categoryInput.value = "";
     descInput.value = "";
     imageInput.value = "";
     imageDataInput.value = "";
@@ -396,6 +437,7 @@ document.addEventListener("DOMContentLoaded", () => {
     idInput.value = item.id;
     titleInput.value = item.title;
     priceInput.value = item.price || "";
+    categoryInput.value = item.category || "";
     descInput.value = item.description || "";
     imageInput.value = "";
     imageDataInput.value = item.imageData || "";
@@ -444,6 +486,149 @@ document.addEventListener("DOMContentLoaded", () => {
     overviewContent.appendChild(card2);
   }
 
+  // SALGSSIDE (kundevisning) – bare til salgs, med kategori + søk
+
+  function renderSales() {
+    salesListEl.innerHTML = "";
+
+    const activeItems = items.filter(i => !i.isSold);
+
+    // Bygg kategorier
+    renderSalesCategories(activeItems);
+
+    // Filtrer på kategori
+    let filtered = activeItems;
+    if (currentSalesCategoryKey !== "all") {
+      filtered = filtered.filter(i => (i.categoryKey || "").toLowerCase() === currentSalesCategoryKey);
+    }
+
+    // Søk
+    if (salesSearchQuery) {
+      filtered = filtered.filter(i => {
+        const haystack = (
+          (i.title || "") +
+          " " +
+          (i.description || "") +
+          " " +
+          (i.category || "") +
+          " " +
+          (i.location || "")
+        ).toLowerCase();
+        return haystack.includes(salesSearchQuery);
+      });
+    }
+
+    if (!filtered.length) {
+      const empty = document.createElement("p");
+      empty.textContent = "Ingen varer til salgs som matcher.";
+      empty.style.color = "#6b7280";
+      empty.style.fontSize = "0.9rem";
+      salesListEl.appendChild(empty);
+      return;
+    }
+
+    filtered
+      .slice()
+      .sort((a, b) => new Date(b.createdAt || b.updatedAt || 0) - new Date(a.createdAt || a.updatedAt || 0))
+      .forEach(item => {
+        const card = createSalesCard(item);
+        salesListEl.appendChild(card);
+      });
+  }
+
+  function renderSalesCategories(activeItems) {
+    salesCategoriesEl.innerHTML = "";
+
+    const chipAll = document.createElement("button");
+    chipAll.className = "chip" + (currentSalesCategoryKey === "all" ? " active" : "");
+    chipAll.textContent = "Alle";
+    chipAll.addEventListener("click", () => {
+      currentSalesCategoryKey = "all";
+      renderSales();
+    });
+    salesCategoriesEl.appendChild(chipAll);
+
+    const categoryMap = new Map();
+    activeItems.forEach(item => {
+      const key = (item.categoryKey || "").toLowerCase();
+      const label = item.category || "";
+      if (!key || !label) return;
+      if (!categoryMap.has(key)) {
+        categoryMap.set(key, label);
+      }
+    });
+
+    Array.from(categoryMap.entries())
+      .sort((a, b) => a[1].localeCompare(b[1], "nb-NO"))
+      .forEach(([key, label]) => {
+        const chip = document.createElement("button");
+        chip.className = "chip" + (currentSalesCategoryKey === key ? " active" : "");
+        chip.textContent = label;
+        chip.addEventListener("click", () => {
+          currentSalesCategoryKey = key;
+          renderSales();
+        });
+        salesCategoriesEl.appendChild(chip);
+      });
+  }
+
+  function createSalesCard(item) {
+    const card = document.createElement("article");
+    card.className = "card";
+
+    const imageWrap = document.createElement("div");
+    imageWrap.className = "card-image";
+    if (item.imageData) {
+      const img = document.createElement("img");
+      img.src = item.imageData;
+      img.alt = item.title;
+      imageWrap.appendChild(img);
+    }
+
+    const body = document.createElement("div");
+    body.className = "card-body";
+
+    const headerRow = document.createElement("div");
+    headerRow.className = "card-header-row";
+
+    const titleEl = document.createElement("div");
+    titleEl.className = "card-title";
+    titleEl.textContent = item.title;
+
+    const priceEl = document.createElement("div");
+    priceEl.className = "card-price";
+    priceEl.textContent = item.price ? `${item.price.toLocaleString("nb-NO")} kr` : "Gi bud";
+
+    headerRow.appendChild(titleEl);
+    headerRow.appendChild(priceEl);
+
+    const descEl = document.createElement("div");
+    descEl.className = "card-description";
+    descEl.textContent = item.description || "";
+
+    const metaEl = document.createElement("div");
+    metaEl.className = "card-meta";
+    let metaText = "";
+    if (item.category) metaText += `Kategori: ${item.category}`;
+    if (item.location) metaText += (metaText ? "\n" : "") + `Lagerplass: ${item.location}`;
+    if (item.createdAt) metaText += (metaText ? "\n" : "") + `Lagt ut: ${formatDate(item.createdAt)}`;
+    metaEl.textContent = metaText;
+
+    // Hele kortet kan åpne detaljvisning
+    card.addEventListener("click", () => {
+      openDetail(item);
+    });
+
+    body.appendChild(headerRow);
+    if (item.description) body.appendChild(descEl);
+    if (metaText) body.appendChild(metaEl);
+
+    card.appendChild(imageWrap);
+    card.appendChild(body);
+
+    return card;
+  }
+
   // DETALJVISNING / PRINT (D + E + F)
 
   function openDetail(item) {
@@ -475,7 +660,8 @@ document.addEventListener("DOMContentLoaded", () => {
     meta.className = "detail-meta";
 
     let metaText = `Lagt ut: ${created}`;
-    if (sold) metaText += ` • Solgt: ${sold}`;
+    if (sold) metaText += `\nSolgt: ${sold}`;
+    if (item.category) metaText += `\nKategori: ${item.category}`;
     if (item.location) metaText += `\nLagerplass: ${item.location}`;
 
     meta.textContent = metaText;
