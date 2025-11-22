@@ -35,6 +35,7 @@ function toggleTheme() {
 }
 function updateThemeButton() {
   const btn = $("#theme-toggle");
+  if (!btn) return;
   const isLight = document.documentElement.classList.contains("light");
   btn.textContent = isLight ? "☀️" : "🌙";
 }
@@ -45,20 +46,21 @@ async function checkSession() {
   currentUser = data.session?.user ?? null;
   updateAuthUI();
 }
-
 function updateAuthUI() {
   const loggedIn = !!currentUser;
-  $("#login-btn").textContent = loggedIn ? "Logg ut" : "Logg inn";
-  $("#admin-nav").classList.toggle("hidden", !loggedIn);
-  $("#fab-add").classList.toggle("hidden", !loggedIn);
+  const loginBtn = $("#login-btn");
+  if (loginBtn) loginBtn.textContent = loggedIn ? "Logg ut" : "Logg inn";
 
-  // "Alle"-tab kun for admin
-  const allTab = document.querySelector('.tab-pill[data-filter="all"]');
-  if (allTab) {
-    allTab.classList.toggle("hidden", !loggedIn);
+  const adminNav = $("#admin-nav");
+  const fab = $("#fab-add");
+  if (adminNav) adminNav.classList.toggle("hidden", !loggedIn);
+  if (fab) fab.classList.toggle("hidden", !loggedIn);
+
+  // sørg for at gjester alltid står på salgsside
+  if (!loggedIn) {
+    switchView("market");
   }
 }
-
 async function handleLoginClick() {
   if (currentUser) {
     await supabase.auth.signOut();
@@ -68,7 +70,6 @@ async function handleLoginClick() {
   }
   showModal("#login-modal");
 }
-
 async function performLogin() {
   const email = $("#login-email").value.trim();
   const password = $("#login-password").value;
@@ -288,12 +289,11 @@ async function sendRequestForCurrentItem() {
 
 // RENDERING
 
-function applyFilterAndSearch(list) {
+function applyFilterAndSearch(list, forAdmin = false) {
   const q = $("#search-input").value.trim().toLowerCase();
   return list.filter((it) => {
     if (currentFilter === "sale" && it.is_sold) return false;
     if (currentFilter === "sold" && !it.is_sold) return false;
-    // "all" = ingen filter
 
     if (currentCategory && it.category_key !== currentCategory) return false;
 
@@ -319,7 +319,7 @@ function renderAll() {
 
 function renderItemsForMarket() {
   const cont = $("#items-container");
-  const filtered = applyFilterAndSearch(items);
+  const filtered = applyFilterAndSearch(items, false);
   if (!filtered.length) {
     cont.innerHTML = '<p style="font-size:13px;color:var(--fg-soft);">Ingen varer.</p>';
     return;
@@ -330,7 +330,7 @@ function renderItemsForMarket() {
 
 function renderItemsForAdmin() {
   const cont = $("#admin-items-container");
-  const filtered = applyFilterAndSearch(items);
+  const filtered = applyFilterAndSearch(items, true);
   if (!filtered.length) {
     cont.innerHTML =
       '<p style="font-size:13px;color:var(--fg-soft);">Ingen varer i listen.</p>';
@@ -427,7 +427,7 @@ function attachCardHandlers(container, isAdmin) {
         editingItemId = id;
         await deleteCurrentItem();
       } else if (isAdmin && action === "toggle-sold") {
-        const it = items.find((i) => String(i.id) === String(id));
+        const it = items.find((i) => i.id === id);
         await toggleSold(id, !it.is_sold);
       }
     });
@@ -435,7 +435,7 @@ function attachCardHandlers(container, isAdmin) {
 }
 
 function openDetailsModal(itemId) {
-  const it = items.find((i) => String(i.id) === String(itemId));
+  const it = items.find((i) => i.id === itemId);
   if (!it) return;
   currentDetailsItemId = itemId;
   const priceText = it.price != null ? `${it.price.toLocaleString("no-NO")} kr` : "Gi bud";
@@ -487,9 +487,11 @@ function renderCategories() {
     bar.innerHTML = "";
     return;
   }
-  const chips = ['<button class="category-chip' +
-    (currentCategory === null ? " category-chip-active" : "") +
-    '" data-cat="__ALL__">Alle kategorier</button>'];
+  const chips = [
+    '<button class="category-chip' +
+      (currentCategory === null ? " category-chip-active" : "") +
+      '" data-cat="__ALL__">Alle kategorier</button>',
+  ];
   for (const c of allCats) {
     const key = c.toLowerCase();
     chips.push(
@@ -557,9 +559,7 @@ function shareItemLink(itemId) {
   const link = url.toString();
 
   if (navigator.share) {
-    navigator
-      .share({ title: "EkstraVerdi – vare", url: link })
-      .catch(() => {});
+    navigator.share({ title: "EkstraVerdi – vare", url: link }).catch(() => {});
   } else {
     navigator.clipboard.writeText(link).catch(() => {});
     alert("Lenke kopiert til utklippstavle:\n" + link);
@@ -617,27 +617,27 @@ function escapeHtml(str) {
 
 // INIT
 function initEvents() {
-  $("#theme-toggle").addEventListener("click", toggleTheme);
+  $("#theme-toggle")?.addEventListener("click", toggleTheme);
 
-  $("#login-btn").addEventListener("click", handleLoginClick);
-  $("#login-cancel").addEventListener("click", () =>
+  $("#login-btn")?.addEventListener("click", handleLoginClick);
+  $("#login-cancel")?.addEventListener("click", () =>
     hideModal("#login-modal")
   );
-  $("#login-submit").addEventListener("click", performLogin);
+  $("#login-submit")?.addEventListener("click", performLogin);
 
-  $("#fab-add").addEventListener("click", openNewItemModal);
-  $("#item-cancel").addEventListener("click", () =>
+  $("#fab-add")?.addEventListener("click", openNewItemModal);
+  $("#item-cancel")?.addEventListener("click", () =>
     hideModal("#item-modal")
   );
-  $("#item-save").addEventListener("click", saveItemFromForm);
-  $("#item-delete").addEventListener("click", deleteCurrentItem);
+  $("#item-save")?.addEventListener("click", saveItemFromForm);
+  $("#item-delete")?.addEventListener("click", deleteCurrentItem);
 
-  $("#details-close").addEventListener("click", () =>
+  $("#details-close")?.addEventListener("click", () =>
     hideModal("#details-modal")
   );
-  $("#req-send").addEventListener("click", sendRequestForCurrentItem);
+  $("#req-send")?.addEventListener("click", sendRequestForCurrentItem);
 
-  $("#search-input").addEventListener("input", () => renderAll());
+  $("#search-input")?.addEventListener("input", () => renderAll());
 
   $$("#admin-nav .nav-pill").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -653,6 +653,7 @@ async function initFromDeepLink() {
   const url = new URL(window.location.href);
   const itemId = url.searchParams.get("item");
   if (itemId) {
+    // vent litt til items er lastet
     const check = setInterval(() => {
       if (items.length) {
         clearInterval(check);
