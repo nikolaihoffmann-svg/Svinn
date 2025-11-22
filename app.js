@@ -1,12 +1,16 @@
 let items = [];
 const STORAGE_KEY = "salgAppItems";
 const THEME_KEY = "salgAppTheme";
+const SETTINGS_KEY = "salgAppSettings";
 
 document.addEventListener("DOMContentLoaded", () => {
   // Elementer
+  const appTitleEl = document.getElementById("app-title");
+
   const listEl = document.getElementById("item-list");
   const addBtn = document.getElementById("add-item-btn");
-  const panel = document.getElementById("item-form-panel");
+  const itemPanel = document.getElementById("item-form-panel");
+  const settingsPanel = document.getElementById("settings-panel");
   const form = document.getElementById("item-form");
   const formTitle = document.getElementById("form-title");
 
@@ -22,36 +26,48 @@ document.addEventListener("DOMContentLoaded", () => {
   const cancelBtn = document.getElementById("cancel-btn");
 
   const filterButtons = document.querySelectorAll(".filter-btn");
-  const tabButtons = document.querySelectorAll(".tab-btn");
+
   const viewList = document.getElementById("view-list");
   const viewOverview = document.getElementById("view-overview");
   const viewSales = document.getElementById("view-sales");
   const overviewContent = document.getElementById("overview-content");
 
   const detailView = document.getElementById("detail-view");
-  const themeToggle = document.getElementById("theme-toggle");
 
   const salesListEl = document.getElementById("sales-list");
   const salesCategoriesEl = document.getElementById("sales-categories");
   const salesSearchInput = document.getElementById("sales-search");
+  const salesFilterToggle = document.getElementById("sales-filter-toggle");
+
+  const settingsBtn = document.getElementById("settings-btn");
+  const settingsTitleInput = document.getElementById("settings-title");
+  const settingsSaveBtn = document.getElementById("settings-save-btn");
+  const settingsCloseBtn = document.getElementById("settings-close-btn");
+  const exportBtn = document.getElementById("export-btn");
 
   let currentFilter = "active";
   let currentSalesCategoryKey = "all";
   let salesSearchQuery = "";
+  let currentView = "sales"; // "sales" | "list" | "overview"
+  let settings = {
+    title: "Mine salgsting",
+    theme: "system",
+    defaultView: "sales"
+  };
 
-  // THEME
-  initTheme();
+  // Init
+  loadSettings();
+  initThemeFromSettings();
+  applyTitleFromSettings();
 
-  // Last data
   loadItems();
-
-  // Render
+  showView(settings.defaultView || "sales");
   renderList();
   renderOverview();
   renderSales();
 
-  // Sjekk om vi har itemId i URL (for delt lenke)
   handleItemFromUrl();
+  registerServiceWorker();
 
   // HANDLERS
 
@@ -60,7 +76,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   cancelBtn.addEventListener("click", () => {
-    closeForm();
+    closeItemForm();
   });
 
   // Bilde -> base64
@@ -84,131 +100,155 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // Tabs
-  tabButtons.forEach(btn => {
-    btn.addEventListener("click", () => {
-      tabButtons.forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-
-      const view = btn.dataset.view;
-      if (view === "list") {
-        viewList.classList.remove("hidden");
-        viewOverview.classList.add("hidden");
-        viewSales.classList.add("hidden");
-      } else if (view === "overview") {
-        viewList.classList.add("hidden");
-        viewOverview.classList.remove("hidden");
-        viewSales.classList.add("hidden");
-        renderOverview();
-      } else if (view === "sales") {
-        viewList.classList.add("hidden");
-        viewOverview.classList.add("hidden");
-        viewSales.classList.remove("hidden");
-        renderSales();
-      }
-    });
-  });
-
-  // Tema-knapp
-  themeToggle.addEventListener("click", () => {
-    const isDark = document.body.classList.toggle("dark");
-    themeToggle.textContent = isDark ? "☀️" : "🌙";
-    localStorage.setItem(THEME_KEY, isDark ? "dark" : "light");
-  });
-
   // Søk på salgsside
   salesSearchInput.addEventListener("input", e => {
     salesSearchQuery = (e.target.value || "").toLowerCase().trim();
     renderSales();
   });
 
-  // Lagre skjema
-  form.addEventListener("submit", e => {
-    e.preventDefault();
-    const id = idInput.value || Date.now().toString();
-    const title = titleInput.value.trim();
-    const price = Number(priceInput.value || 0);
-    const category = categoryInput.value.trim();
-    const categoryKey = category ? category.toLowerCase() : "";
-    const description = descInput.value.trim();
-    const imageData = imageDataInput.value || "";
-    const isSold = soldInput.checked;
-    const location = locationInput.value.trim();
-
-    if (!title) {
-      alert("Tittel kan ikke være tom.");
-      return;
-    }
-
-    const existingIndex = items.findIndex(i => i.id === id);
-    const now = new Date().toISOString();
-
-    if (existingIndex >= 0) {
-      // Oppdater
-      const existing = items[existingIndex];
-
-      let soldAt = existing.soldAt || null;
-      // Hvis den var usolgt og nå markeres som solgt -> sett soldAt
-      if (!existing.isSold && isSold) {
-        soldAt = now;
-      }
-      // Hvis den var solgt og nå markeres som usolgt -> nullstill soldAt
-      if (existing.isSold && !isSold) {
-        soldAt = null;
-      }
-
-      items[existingIndex] = {
-        ...existing,
-        title,
-        price,
-        description,
-        imageData: imageData || existing.imageData,
-        isSold,
-        location,
-        category,
-        categoryKey,
-        soldAt,
-        updatedAt: now
-      };
-    } else {
-      // Ny
-      items.push({
-        id,
-        title,
-        price,
-        description,
-        imageData,
-        isSold,
-        location,
-        category,
-        categoryKey,
-        createdAt: now,
-        updatedAt: now,
-        soldAt: isSold ? now : null
-      });
-    }
-
-    saveItems();
-    renderList();
-    renderOverview();
-    renderSales();
-    closeForm();
+  // Toggle kategori-filter visning
+  salesFilterToggle.addEventListener("click", () => {
+    salesCategoriesEl.classList.toggle("hidden");
   });
 
-  // FUNKSJONER
+  // INNSTILLINGER
+  settingsBtn.addEventListener("click", () => {
+    openSettings();
+  });
 
-  function initTheme() {
-    const stored = localStorage.getItem(THEME_KEY);
-    const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const useDark = stored ? stored === "dark" : prefersDark;
+  settingsCloseBtn.addEventListener("click", () => {
+    closeSettings();
+  });
 
-    if (useDark) {
-      document.body.classList.add("dark");
-      themeToggle.textContent = "☀️";
-    } else {
-      themeToggle.textContent = "🌙";
+  settingsSaveBtn.addEventListener("click", () => {
+    saveSettings();
+  });
+
+  exportBtn.addEventListener("click", () => {
+    exportData();
+  });
+
+  // Lagre skjema (vare)
+  form.addEventListener("submit", e => {
+    e.preventDefault();
+    saveItemFromForm();
+  });
+
+  // FUNKSJONER – SETTINGS
+
+  function loadSettings() {
+    try {
+      const raw = localStorage.getItem(SETTINGS_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        settings = { ...settings, ...parsed };
+      }
+    } catch (e) {
+      console.warn("Kunne ikke lese settings", e);
     }
   }
+
+  function saveSettingsToStorage() {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  }
+
+  function applyTitleFromSettings() {
+    appTitleEl.textContent = settings.title || "Mine salgsting";
+  }
+
+  function initThemeFromSettings() {
+    let theme = settings.theme;
+    if (!theme || theme === "system") {
+      const prefersDark =
+        window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+      theme = prefersDark ? "dark" : "light";
+    }
+
+    document.body.classList.toggle("dark", theme === "dark");
+    localStorage.setItem(THEME_KEY, theme);
+  }
+
+  function openSettings() {
+    // Fyll inn nåværende verdier i UI
+    settingsTitleInput.value = settings.title || "";
+
+    const themeRadios = document.querySelectorAll('input[name="settings-theme"]');
+    const theme = localStorage.getItem(THEME_KEY) || "light";
+    themeRadios.forEach(radio => {
+      radio.checked = radio.value === theme;
+    });
+
+    const viewRadios = document.querySelectorAll('input[name="settings-view"]');
+    const v = settings.defaultView || "sales";
+    viewRadios.forEach(radio => {
+      radio.checked = radio.value === v;
+    });
+
+    settingsPanel.classList.remove("hidden");
+  }
+
+  function closeSettings() {
+    settingsPanel.classList.add("hidden");
+  }
+
+  function saveSettings() {
+    const newTitle = settingsTitleInput.value.trim() || "Mine salgsting";
+    settings.title = newTitle;
+
+    const themeRadios = document.querySelectorAll('input[name="settings-theme"]');
+    let selectedTheme = "light";
+    themeRadios.forEach(radio => {
+      if (radio.checked) selectedTheme = radio.value;
+    });
+    settings.theme = selectedTheme;
+
+    const viewRadios = document.querySelectorAll('input[name="settings-view"]');
+    let selectedView = "sales";
+    viewRadios.forEach(radio => {
+      if (radio.checked) selectedView = radio.value;
+    });
+    settings.defaultView = selectedView;
+
+    saveSettingsToStorage();
+    applyTitleFromSettings();
+    initThemeFromSettings();
+    showView(settings.defaultView);
+
+    closeSettings();
+  }
+
+  // EXPORT / BACKUP
+
+  function exportData() {
+    const data = {
+      items,
+      settings
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: "application/json"
+    });
+    const url = URL.createObjectURL(blob);
+    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `salg-app-backup-${today}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  // SERVICE WORKER / OFFLINE
+
+  function registerServiceWorker() {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker
+        .register("sw.js")
+        .catch(err => console.warn("Kunne ikke registrere service worker:", err));
+    }
+  }
+
+  // DATA
 
   function loadItems() {
     try {
@@ -240,7 +280,25 @@ document.addEventListener("DOMContentLoaded", () => {
     return value.toLocaleString("nb-NO") + " kr";
   }
 
-  // ADMINLISTE (LISTE-TAB)
+  // VISNINGSSTYRING
+
+  function showView(view) {
+    currentView = view;
+
+    viewSales.classList.add("hidden");
+    viewList.classList.add("hidden");
+    viewOverview.classList.add("hidden");
+
+    if (view === "list") {
+      viewList.classList.remove("hidden");
+    } else if (view === "overview") {
+      viewOverview.classList.remove("hidden");
+    } else {
+      viewSales.classList.remove("hidden");
+    }
+  }
+
+  // ADMINLISTE (LISTE-VISNING)
 
   function renderList() {
     listEl.innerHTML = "";
@@ -429,7 +487,7 @@ document.addEventListener("DOMContentLoaded", () => {
     imageDataInput.value = "";
     soldInput.checked = false;
     locationInput.value = "";
-    panel.classList.remove("hidden");
+    itemPanel.classList.remove("hidden");
   }
 
   function openFormForEdit(item) {
@@ -443,14 +501,79 @@ document.addEventListener("DOMContentLoaded", () => {
     imageDataInput.value = item.imageData || "";
     soldInput.checked = !!item.isSold;
     locationInput.value = item.location || "";
-    panel.classList.remove("hidden");
+    itemPanel.classList.remove("hidden");
   }
 
-  function closeForm() {
-    panel.classList.add("hidden");
+  function closeItemForm() {
+    itemPanel.classList.add("hidden");
   }
 
-  // OVERSIKT (C)
+  function saveItemFromForm() {
+    const id = idInput.value || Date.now().toString();
+    const title = titleInput.value.trim();
+    const price = Number(priceInput.value || 0);
+    const category = categoryInput.value.trim();
+    const categoryKey = category ? category.toLowerCase() : "";
+    const description = descInput.value.trim();
+    const imageData = imageDataInput.value || "";
+    const isSold = soldInput.checked;
+    const location = locationInput.value.trim();
+
+    if (!title) {
+      alert("Tittel kan ikke være tom.");
+      return;
+    }
+
+    const existingIndex = items.findIndex(i => i.id === id);
+    const now = new Date().toISOString();
+
+    if (existingIndex >= 0) {
+      // Oppdater
+      const existing = items[existingIndex];
+
+      let soldAt = existing.soldAt || null;
+      if (!existing.isSold && isSold) soldAt = now;
+      if (existing.isSold && !isSold) soldAt = null;
+
+      items[existingIndex] = {
+        ...existing,
+        title,
+        price,
+        description,
+        imageData: imageData || existing.imageData,
+        isSold,
+        location,
+        category,
+        categoryKey,
+        soldAt,
+        updatedAt: now
+      };
+    } else {
+      // Ny
+      items.push({
+        id,
+        title,
+        price,
+        description,
+        imageData,
+        isSold,
+        location,
+        category,
+        categoryKey,
+        createdAt: now,
+        updatedAt: now,
+        soldAt: isSold ? now : null
+      });
+    }
+
+    saveItems();
+    renderList();
+    renderOverview();
+    renderSales();
+    closeItemForm();
+  }
+
+  // OVERSIKT
 
   function renderOverview() {
     const totalActive = items
@@ -486,20 +609,22 @@ document.addEventListener("DOMContentLoaded", () => {
     overviewContent.appendChild(card2);
   }
 
-  // SALGSSIDE (kundevisning) – bare til salgs, med kategori + søk
+  // SALGSSIDE (kundevisning)
 
   function renderSales() {
     salesListEl.innerHTML = "";
 
     const activeItems = items.filter(i => !i.isSold);
 
-    // Bygg kategorier
+    // Build categories (for filterpanelet)
     renderSalesCategories(activeItems);
 
-    // Filtrer på kategori
+    // Filter på valgt kategori
     let filtered = activeItems;
     if (currentSalesCategoryKey !== "all") {
-      filtered = filtered.filter(i => (i.categoryKey || "").toLowerCase() === currentSalesCategoryKey);
+      filtered = filtered.filter(
+        i => (i.categoryKey || "").toLowerCase() === currentSalesCategoryKey
+      );
     }
 
     // Søk
@@ -614,7 +739,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (item.createdAt) metaText += (metaText ? "\n" : "") + `Lagt ut: ${formatDate(item.createdAt)}`;
     metaEl.textContent = metaText;
 
-    // Hele kortet kan åpne detaljvisning
     card.addEventListener("click", () => {
       openDetail(item);
     });
@@ -629,7 +753,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return card;
   }
 
-  // DETALJVISNING / PRINT (D + E + F)
+  // DETALJVISNING / PRINT
 
   function openDetail(item) {
     document.body.classList.add("detail-open");
@@ -722,7 +846,6 @@ document.addEventListener("DOMContentLoaded", () => {
     document.body.classList.remove("detail-open");
     detailView.innerHTML = "";
 
-    // Fjern itemId fra URL
     const url = new URL(window.location.href);
     url.searchParams.delete("itemId");
     window.history.replaceState({}, "", url.toString());
@@ -735,10 +858,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const item = items.find(i => i.id === itemId);
     if (item) {
-      // Vis detaljvisning for denne varen
       openDetail(item);
     } else {
-      // Annonsen finnes ikke i denne nettleseren
       document.body.classList.add("detail-open");
       detailView.innerHTML = `
         <div class="detail-card">
@@ -755,7 +876,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // DELING AV LENKE (A)
+  // DELING AV LENKE
 
   function shareItemLink(item) {
     const url = new URL(window.location.href);
@@ -773,7 +894,6 @@ document.addEventListener("DOMContentLoaded", () => {
           console.warn("Deling avbrutt:", err);
         });
     } else {
-      // Fallback: vis lenken så man kan kopiere
       window.prompt("Kopier denne lenken:", shareUrl);
     }
   }
