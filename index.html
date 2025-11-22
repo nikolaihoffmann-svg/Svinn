@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+  <meta charset="UTF-8" />
+  <title>Mine salgsting</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="app-header">
+      <h1>Mine salgsting</h1>
+      <p class="subtitle">Enkel oversikt over alt jeg selger</p>
+    </header>
+
+    <main>
+      <section id="filters" class="filters">
+        <button class="filter-btn active" data-filter="active">Til salgs</button>
+        <button class="filter-btn" data-filter="sold">Solgt</button>
+        <button class="filter-btn" data-filter="all">Alle</button>
+      </section>
+
+      <section id="item-list" class="item-list">
+        <!-- Kort genereres i app.js -->
+      </section>
+
+      <button id="add-item-btn" class="fab" aria-label="Legg til ny ting">+</button>
+
+      <!-- Panel med skjema for ny / rediger -->
+      <div id="item-form-panel" class="panel hidden">
+        <div class="panel-inner">
+          <h2 id="form-title">Ny ting</h2>
+          <form id="item-form">
+            <input type="hidden" id="item-id" />
+            <input type="hidden" id="item-image-data" />
+
+            <label class="field">
+              <span>Tittel</span>
+              <input type="text" id="item-title" required placeholder="F.eks. iPhone 13, vinterdekk, verktøy..." />
+            </label>
+
+            <label class="field">
+              <span>Pris (kr)</span>
+              <input type="number" id="item-price" min="0" step="1" required placeholder="F.eks. 1500" />
+            </label>
+
+            <label class="field">
+              <span>Beskrivelse</span>
+              <textarea id="item-description" rows="3" placeholder="Kort beskrivelse, tilstand, størrelse osv."></textarea>
+            </label>
+
+            <label class="field">
+              <span>Bilde</span>
+              <input type="file" id="item-image" accept="image/*" />
+              <small>Du kan ta bilde direkte fra mobilen.</small>
+            </label>
+
+            <label class="checkbox-field">
+              <input type="checkbox" id="item-sold" />
+              <span>Markér som solgt</span>
+            </label>
+
+            <div class="form-actions">
+              <button type="button" id="cancel-btn" class="btn secondary">Avbryt</button>
+              <button type="submit" class="btn primary">Lagre</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
