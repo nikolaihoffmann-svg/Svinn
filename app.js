@@ -1,6 +1,6 @@
-// Enkel lokal "database"
 let items = [];
 const STORAGE_KEY = "salgAppItems";
+const THEME_KEY = "salgAppTheme";
 
 document.addEventListener("DOMContentLoaded", () => {
   // Elementer
@@ -17,16 +17,34 @@ document.addEventListener("DOMContentLoaded", () => {
   const imageInput = document.getElementById("item-image");
   const imageDataInput = document.getElementById("item-image-data");
   const soldInput = document.getElementById("item-sold");
+  const locationInput = document.getElementById("item-location");
   const cancelBtn = document.getElementById("cancel-btn");
 
   const filterButtons = document.querySelectorAll(".filter-btn");
+  const tabButtons = document.querySelectorAll(".tab-btn");
+  const viewList = document.getElementById("view-list");
+  const viewOverview = document.getElementById("view-overview");
+  const overviewContent = document.getElementById("overview-content");
+
+  const detailView = document.getElementById("detail-view");
+  const themeToggle = document.getElementById("theme-toggle");
+
   let currentFilter = "active";
+
+  // THEME
+  initTheme();
 
   // Last data
   loadItems();
-  renderList();
 
-  // Handlers
+  // Render
+  renderList();
+  renderOverview();
+
+  // Sjekk om vi har itemId i URL (for delt lenke)
+  handleItemFromUrl();
+
+  // HANDLERS
 
   addBtn.addEventListener("click", () => {
     openFormForNew();
@@ -57,6 +75,31 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  // Tabs (liste / oversikt)
+  tabButtons.forEach(btn => {
+    btn.addEventListener("click", () => {
+      tabButtons.forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+
+      const view = btn.dataset.view;
+      if (view === "list") {
+        viewList.classList.remove("hidden");
+        viewOverview.classList.add("hidden");
+      } else {
+        viewList.classList.add("hidden");
+        viewOverview.classList.remove("hidden");
+        renderOverview();
+      }
+    });
+  });
+
+  // Tema-knapp
+  themeToggle.addEventListener("click", () => {
+    const isDark = document.body.classList.toggle("dark");
+    themeToggle.textContent = isDark ? "☀️" : "🌙";
+    localStorage.setItem(THEME_KEY, isDark ? "dark" : "light");
+  });
+
   // Lagre skjema
   form.addEventListener("submit", e => {
     e.preventDefault();
@@ -66,6 +109,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const description = descInput.value.trim();
     const imageData = imageDataInput.value || "";
     const isSold = soldInput.checked;
+    const location = locationInput.value.trim();
 
     if (!title) {
       alert("Tittel kan ikke være tom.");
@@ -78,6 +122,17 @@ document.addEventListener("DOMContentLoaded", () => {
     if (existingIndex >= 0) {
       // Oppdater
       const existing = items[existingIndex];
+
+      let soldAt = existing.soldAt || null;
+      // Hvis den var usolgt og nå markeres som solgt -> sett soldAt
+      if (!existing.isSold && isSold) {
+        soldAt = now;
+      }
+      // Hvis den var solgt og nå markeres som usolgt -> nullstill soldAt
+      if (existing.isSold && !isSold) {
+        soldAt = null;
+      }
+
       items[existingIndex] = {
         ...existing,
         title,
@@ -85,6 +140,8 @@ document.addEventListener("DOMContentLoaded", () => {
         description,
         imageData: imageData || existing.imageData,
         isSold,
+        location,
+        soldAt,
         updatedAt: now
       };
     } else {
@@ -96,23 +153,42 @@ document.addEventListener("DOMContentLoaded", () => {
         description,
         imageData,
         isSold,
+        location,
         createdAt: now,
-        updatedAt: now
+        updatedAt: now,
+        soldAt: isSold ? now : null
       });
     }
 
     saveItems();
     renderList();
+    renderOverview();
     closeForm();
   });
 
-  // Funksjoner
+  // FUNKSJONER
+
+  function initTheme() {
+    const stored = localStorage.getItem(THEME_KEY);
+    const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const useDark = stored ? stored === "dark" : prefersDark;
+
+    if (useDark) {
+      document.body.classList.add("dark");
+      themeToggle.textContent = "☀️";
+    } else {
+      themeToggle.textContent = "🌙";
+    }
+  }
 
   function loadItems() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) items = JSON.parse(raw);
-      else items = [];
+      if (raw) {
+        items = JSON.parse(raw);
+      } else {
+        items = [];
+      }
     } catch (err) {
       console.error("Kunne ikke lese data:", err);
       items = [];
@@ -121,6 +197,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function saveItems() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  }
+
+  function formatDate(dateStr) {
+    if (!dateStr) return "";
+    const d = new Date(dateStr);
+    if (Number.isNaN(d.getTime())) return "";
+    return d.toLocaleDateString("nb-NO");
+  }
+
+  function formatCurrency(value) {
+    if (!value) return "0 kr";
+    return value.toLocaleString("nb-NO") + " kr";
   }
 
   function renderList() {
@@ -143,8 +231,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     filtered
-      .slice() // kopier
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice()
+      .sort((a, b) => new Date(b.createdAt || b.updatedAt || 0) - new Date(a.createdAt || a.updatedAt || 0))
       .forEach(item => {
         const card = createCard(item);
         listEl.appendChild(card);
@@ -185,6 +273,15 @@ document.addEventListener("DOMContentLoaded", () => {
     descEl.className = "card-description";
     descEl.textContent = item.description || "";
 
+    const metaEl = document.createElement("div");
+    metaEl.className = "card-meta";
+
+    const createdPart = item.createdAt ? `Lagt ut: ${formatDate(item.createdAt)}` : "";
+    const soldPart = item.isSold && item.soldAt ? ` • Solgt: ${formatDate(item.soldAt)}` : "";
+    const locationPart = item.location ? `\nLagerplass: ${item.location}` : "";
+
+    metaEl.textContent = `${createdPart}${soldPart}${locationPart}`;
+
     const badges = document.createElement("div");
     badges.className = "badges";
     const statusBadge = document.createElement("span");
@@ -199,10 +296,7 @@ document.addEventListener("DOMContentLoaded", () => {
     toggleBtn.className = "btn-small-secondary";
     toggleBtn.textContent = item.isSold ? "Markér som til salgs" : "Markér som solgt";
     toggleBtn.addEventListener("click", () => {
-      item.isSold = !item.isSold;
-      item.updatedAt = new Date().toISOString();
-      saveItems();
-      renderList();
+      toggleSold(item.id);
     });
 
     const editBtn = document.createElement("button");
@@ -210,6 +304,20 @@ document.addEventListener("DOMContentLoaded", () => {
     editBtn.textContent = "Rediger";
     editBtn.addEventListener("click", () => {
       openFormForEdit(item);
+    });
+
+    const detailBtn = document.createElement("button");
+    detailBtn.className = "btn-small-secondary";
+    detailBtn.textContent = "Detaljer";
+    detailBtn.addEventListener("click", () => {
+      openDetail(item);
+    });
+
+    const shareBtn = document.createElement("button");
+    shareBtn.className = "btn-small-secondary";
+    shareBtn.textContent = "Del lenke";
+    shareBtn.addEventListener("click", () => {
+      shareItemLink(item);
     });
 
     const deleteBtn = document.createElement("button");
@@ -220,15 +328,19 @@ document.addEventListener("DOMContentLoaded", () => {
         items = items.filter(i => i.id !== item.id);
         saveItems();
         renderList();
+        renderOverview();
       }
     });
 
     actions.appendChild(toggleBtn);
     actions.appendChild(editBtn);
+    actions.appendChild(detailBtn);
+    actions.appendChild(shareBtn);
     actions.appendChild(deleteBtn);
 
     body.appendChild(headerRow);
     if (item.description) body.appendChild(descEl);
+    body.appendChild(metaEl);
     body.appendChild(badges);
     body.appendChild(actions);
 
@@ -236,6 +348,34 @@ document.addEventListener("DOMContentLoaded", () => {
     card.appendChild(body);
 
     return card;
+  }
+
+  function toggleSold(id) {
+    const idx = items.findIndex(i => i.id === id);
+    if (idx === -1) return;
+    const now = new Date().toISOString();
+    const item = items[idx];
+
+    const newIsSold = !item.isSold;
+    let soldAt = item.soldAt || null;
+
+    if (!item.isSold && newIsSold) {
+      soldAt = now;
+    }
+    if (item.isSold && !newIsSold) {
+      soldAt = null;
+    }
+
+    items[idx] = {
+      ...item,
+      isSold: newIsSold,
+      soldAt,
+      updatedAt: now
+    };
+
+    saveItems();
+    renderList();
+    renderOverview();
   }
 
   function openFormForNew() {
@@ -247,6 +387,7 @@ document.addEventListener("DOMContentLoaded", () => {
     imageInput.value = "";
     imageDataInput.value = "";
     soldInput.checked = false;
+    locationInput.value = "";
     panel.classList.remove("hidden");
   }
 
@@ -259,10 +400,195 @@ document.addEventListener("DOMContentLoaded", () => {
     imageInput.value = "";
     imageDataInput.value = item.imageData || "";
     soldInput.checked = !!item.isSold;
+    locationInput.value = item.location || "";
     panel.classList.remove("hidden");
   }
 
   function closeForm() {
     panel.classList.add("hidden");
+  }
+
+  // OVERSIKT (C)
+
+  function renderOverview() {
+    const totalActive = items
+      .filter(i => !i.isSold)
+      .reduce((sum, i) => sum + (i.price || 0), 0);
+
+    const totalSold = items
+      .filter(i => i.isSold)
+      .reduce((sum, i) => sum + (i.price || 0), 0);
+
+    const countActive = items.filter(i => !i.isSold).length;
+    const countSold = items.filter(i => i.isSold).length;
+
+    overviewContent.innerHTML = "";
+
+    const card1 = document.createElement("div");
+    card1.className = "overview-card";
+    card1.innerHTML = `
+      <h3>Ordrereserve (alt til salgs)</h3>
+      <p><strong>${formatCurrency(totalActive)}</strong></p>
+      <p>${countActive} varer til salgs</p>
+    `;
+
+    const card2 = document.createElement("div");
+    card2.className = "overview-card";
+    card2.innerHTML = `
+      <h3>Totalt tjent (solgt)</h3>
+      <p><strong>${formatCurrency(totalSold)}</strong></p>
+      <p>${countSold} varer solgt</p>
+    `;
+
+    overviewContent.appendChild(card1);
+    overviewContent.appendChild(card2);
+  }
+
+  // DETALJVISNING / PRINT (D + E + F)
+
+  function openDetail(item) {
+    document.body.classList.add("detail-open");
+
+    const created = item.createdAt ? formatDate(item.createdAt) : "Ukjent";
+    const sold = item.isSold && item.soldAt ? formatDate(item.soldAt) : null;
+
+    detailView.innerHTML = "";
+
+    const card = document.createElement("div");
+    card.className = "detail-card";
+
+    const header = document.createElement("div");
+    header.className = "detail-header";
+
+    const title = document.createElement("div");
+    title.className = "detail-title";
+    title.textContent = item.title;
+
+    const price = document.createElement("div");
+    price.className = "detail-price";
+    price.textContent = item.price ? `${item.price.toLocaleString("nb-NO")} kr` : "Gi bud";
+
+    header.appendChild(title);
+    header.appendChild(price);
+
+    const meta = document.createElement("div");
+    meta.className = "detail-meta";
+
+    let metaText = `Lagt ut: ${created}`;
+    if (sold) metaText += ` • Solgt: ${sold}`;
+    if (item.location) metaText += `\nLagerplass: ${item.location}`;
+
+    meta.textContent = metaText;
+
+    const imageWrap = document.createElement("div");
+    imageWrap.className = "detail-image";
+    if (item.imageData) {
+      const img = document.createElement("img");
+      img.src = item.imageData;
+      img.alt = item.title;
+      imageWrap.appendChild(img);
+    }
+
+    const desc = document.createElement("p");
+    desc.className = "detail-body-text";
+    desc.textContent = item.description || "";
+
+    const statusLine = document.createElement("p");
+    statusLine.className = "detail-body-text";
+    statusLine.textContent = `Status: ${item.isSold ? "Solgt" : "Til salgs"}`;
+
+    const actions = document.createElement("div");
+    actions.className = "detail-actions";
+
+    const backBtn = document.createElement("button");
+    backBtn.className = "btn secondary";
+    backBtn.textContent = "Tilbake";
+    backBtn.addEventListener("click", () => {
+      closeDetail();
+    });
+
+    const printBtn = document.createElement("button");
+    printBtn.className = "btn primary";
+    printBtn.textContent = "Skriv ut";
+    printBtn.addEventListener("click", () => {
+      window.print();
+    });
+
+    actions.appendChild(backBtn);
+    actions.appendChild(printBtn);
+
+    card.appendChild(header);
+    card.appendChild(meta);
+    if (item.imageData) card.appendChild(imageWrap);
+    card.appendChild(desc);
+    card.appendChild(statusLine);
+    card.appendChild(actions);
+
+    detailView.appendChild(card);
+
+    // Oppdater URL for denne annonsen
+    const url = new URL(window.location.href);
+    url.searchParams.set("itemId", item.id);
+    window.history.replaceState({}, "", url.toString());
+  }
+
+  function closeDetail() {
+    document.body.classList.remove("detail-open");
+    detailView.innerHTML = "";
+
+    // Fjern itemId fra URL
+    const url = new URL(window.location.href);
+    url.searchParams.delete("itemId");
+    window.history.replaceState({}, "", url.toString());
+  }
+
+  function handleItemFromUrl() {
+    const url = new URL(window.location.href);
+    const itemId = url.searchParams.get("itemId");
+    if (!itemId) return;
+
+    const item = items.find(i => i.id === itemId);
+    if (item) {
+      // Vis detaljvisning for denne varen
+      openDetail(item);
+    } else {
+      // Annonsen finnes ikke i denne nettleseren
+      document.body.classList.add("detail-open");
+      detailView.innerHTML = `
+        <div class="detail-card">
+          <p>Fant ikke denne annonsen i denne nettleseren.</p>
+          <div class="detail-actions">
+            <button class="btn secondary" id="detail-back-only">Tilbake</button>
+          </div>
+        </div>
+      `;
+      const backOnly = document.getElementById("detail-back-only");
+      backOnly.addEventListener("click", () => {
+        closeDetail();
+      });
+    }
+  }
+
+  // DELING AV LENKE (A)
+
+  function shareItemLink(item) {
+    const url = new URL(window.location.href);
+    url.searchParams.set("itemId", item.id);
+    const shareUrl = url.toString();
+
+    if (navigator.share) {
+      navigator
+        .share({
+          title: item.title,
+          text: "Sjekk denne varen jeg har til salgs:",
+          url: shareUrl
+        })
+        .catch(err => {
+          console.warn("Deling avbrutt:", err);
+        });
+    } else {
+      // Fallback: vis lenken så man kan kopiere
+      window.prompt("Kopier denne lenken:", shareUrl);
+    }
   }
 });
