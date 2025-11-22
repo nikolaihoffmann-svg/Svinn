@@ -32,7 +32,7 @@
         <button data-view="requests" class="nav-pill">Forespørsler</button>
       </nav>
 
-      <!-- Søk + filter -->
+      <!-- Søk -->
       <section class="search-section" id="search-section">
         <input
           id="search-input"
@@ -41,6 +41,13 @@
         />
       </section>
 
+      <!-- NY: Filter & sortering-knapp under søk -->
+      <div class="filter-row">
+        <button id="filter-btn" class="pill-btn pill-ghost">
+          🔍 Filter &amp; sortering
+        </button>
+      </div>
+
       <!-- Faner (til salgs / solgt / alle) -->
       <section class="tabs-section">
         <button class="tab-pill tab-active" data-filter="sale">Til salgs</button>
@@ -48,7 +55,7 @@
         <button class="tab-pill" data-filter="all">Alle</button>
       </section>
 
-      <!-- Kategori-knapper (genereres dynamisk) -->
+      <!-- Kategori-knapper (tom nå, vi bruker filter-modal i stedet) -->
       <section id="category-bar" class="category-bar"></section>
 
       <!-- Ulike “views” -->
@@ -172,6 +179,32 @@
       <div class="modal-actions">
         <button id="details-close" class="pill-btn pill-ghost">Lukk</button>
         <button id="req-send" class="pill-btn">Send forespørsel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- NY: Filter & sortering-modal -->
+  <div id="filter-modal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content modal-scroll">
+      <h2>Filter &amp; sortering</h2>
+
+      <h3>Sorter etter</h3>
+      <select id="sort-select">
+        <option value="date-desc">Nyeste først</option>
+        <option value="date-asc">Eldst først</option>
+        <option value="price-desc">Dyrest først</option>
+        <option value="price-asc">Billigst først</option>
+      </select>
+
+      <h3 style="margin-top: 14px;">Kategori</h3>
+      <div id="filter-category-container">
+        <!-- fylles fra JS -->
+      </div>
+
+      <div class="modal-actions">
+        <button id="filter-reset" class="pill-btn pill-ghost">Nullstill</button>
+        <button id="filter-apply" class="pill-btn">Bruk</button>
       </div>
     </div>
   </div>
