@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <title>Mine salgsting</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -11,24 +12,41 @@
     <header class="app-header">
       <div class="header-top">
         <div>
-          <h1>Mine salgsting</h1>
+          <h1 id="app-title">Mine salgsting</h1>
           <p class="subtitle">Enkel oversikt over alt jeg selger</p>
         </div>
-        <button id="theme-toggle" class="theme-toggle" aria-label="Bytt tema">
-          🌙
+        <button id="settings-btn" class="icon-btn" aria-label="Innstillinger">
+          ⚙️
         </button>
       </div>
     </header>
 
     <main>
-      <nav class="tabs">
-        <button class="tab-btn active" data-view="list">Liste</button>
-        <button class="tab-btn" data-view="overview">Oversikt</button>
-        <button class="tab-btn" data-view="sales">Salgsside</button>
-      </nav>
+      <!-- SALGSSIDE (standardvisning) -->
+      <section id="view-sales">
+        <div class="sales-header">
+          <input
+            type="search"
+            id="sales-search"
+            class="search-input"
+            placeholder="Søk i varer til salgs..."
+          />
+          <button id="sales-filter-toggle" class="icon-btn" aria-label="Filtrer på kategori">
+            🔍
+          </button>
+        </div>
+
+        <div id="sales-categories" class="chip-row hidden">
+          <!-- Kategori-chips bygges i app.js -->
+        </div>
+
+        <section id="sales-list" class="item-list sales-list">
+          <!-- Salgskort genereres i app.js -->
+        </section>
+      </section>
 
       <!-- LISTEVISNING (ADMIN) -->
-      <section id="view-list">
+      <section id="view-list" class="hidden">
         <section id="filters" class="filters">
           <button class="filter-btn active" data-filter="active">Til salgs</button>
           <button class="filter-btn" data-filter="sold">Solgt</button>
@@ -40,41 +58,22 @@
         </section>
       </section>
 
-      <!-- OVERSIKT -->
+      <!-- OVERSIKT (ADMIN) -->
       <section id="view-overview" class="hidden">
         <section id="overview-content" class="overview">
           <!-- Fylles i app.js -->
         </section>
       </section>
 
-      <!-- SALGSSIDE / KUNDEVISNING -->
-      <section id="view-sales" class="hidden">
-        <div class="sales-header">
-          <input
-            type="search"
-            id="sales-search"
-            class="search-input"
-            placeholder="Søk i varer til salgs..."
-          />
-        </div>
-
-        <div id="sales-categories" class="chip-row">
-          <!-- Kategori-chips bygges i app.js -->
-        </div>
-
-        <section id="sales-list" class="item-list sales-list">
-          <!-- Salgskort genereres i app.js -->
-        </section>
-      </section>
-
-      <!-- DETALJVISNING FOR ENKELTANNONSE / PRINT -->
+      <!-- DETALJVISNING / PRINT -->
       <section id="detail-view" class="detail-view">
         <!-- Fylles med én annonse når brukt -->
       </section>
 
+      <!-- FAB (legg til ny vare) -->
       <button id="add-item-btn" class="fab" aria-label="Legg til ny ting">+</button>
 
-      <!-- Panel med skjema for ny / rediger -->
+      <!-- PANEL: NY / REDIGER VARE -->
       <div id="item-form-panel" class="panel hidden">
         <div class="panel-inner">
           <h2 id="form-title">Ny ting</h2>
@@ -123,6 +122,45 @@
               <button type="submit" class="btn primary">Lagre</button>
             </div>
           </form>
+        </div>
+      </div>
+
+      <!-- PANEL: INNSTILLINGER -->
+      <div id="settings-panel" class="panel hidden">
+        <div class="panel-inner">
+          <h2>Innstillinger</h2>
+
+          <label class="field">
+            <span>Overskrift (tittel)</span>
+            <input type="text" id="settings-title" placeholder="F.eks. Niko sitt salgslager" />
+          </label>
+
+          <div class="field">
+            <span>Tema</span>
+            <div class="settings-row">
+              <label><input type="radio" name="settings-theme" value="light" /> Lys</label>
+              <label><input type="radio" name="settings-theme" value="dark" /> Mørk</label>
+            </div>
+          </div>
+
+          <div class="field">
+            <span>Standardvisning</span>
+            <div class="settings-row">
+              <label><input type="radio" name="settings-view" value="sales" /> Salgsside</label>
+              <label><input type="radio" name="settings-view" value="list" /> Liste (admin)</label>
+              <label><input type="radio" name="settings-view" value="overview" /> Oversikt</label>
+            </div>
+          </div>
+
+          <div class="field">
+            <span>Backup</span>
+            <button type="button" id="export-btn" class="btn secondary">Eksporter data (JSON)</button>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" id="settings-close-btn" class="btn secondary">Lukk</button>
+            <button type="button" id="settings-save-btn" class="btn primary">Lagre</button>
+          </div>
         </div>
       </div>
     </main>
