@@ -1,0 +1,12 @@
+body {
+  margin: 0;
+  padding: 0;
+  background: #0b0e14;
+  color: white;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+#app {
+  padding: 20px;
+  font-size: 18px;
+}
