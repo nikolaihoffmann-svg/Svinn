@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <title>Mine salgsting</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -13,16 +12,30 @@
       <div class="header-top">
         <div>
           <h1 id="app-title">Mine salgsting</h1>
-          <p class="subtitle">Enkel oversikt over alt jeg selger</p>
+          <p id="app-subtitle" class="subtitle">Enkel oversikt over alt jeg selger</p>
         </div>
-        <button id="settings-btn" class="icon-btn" aria-label="Innstillinger">
-          ⚙️
-        </button>
+        <div class="header-actions">
+          <button id="theme-toggle" class="icon-btn" aria-label="Bytt tema">
+            🌙
+          </button>
+          <button id="settings-btn" class="icon-btn hidden" aria-label="Innstillinger">
+            ⚙️
+          </button>
+          <button id="login-btn" class="icon-btn" aria-label="Logg inn">Logg inn</button>
+        </div>
       </div>
     </header>
 
     <main>
-      <!-- SALGSSIDE (kundevisning / standard) -->
+      <!-- ADMIN NAV (bare når innlogget) -->
+      <nav id="admin-nav" class="admin-nav hidden">
+        <button class="admin-nav-btn active" data-view="sales">Salgsside</button>
+        <button class="admin-nav-btn" data-view="list">Liste</button>
+        <button class="admin-nav-btn" data-view="overview">Oversikt</button>
+        <button class="admin-nav-btn" data-view="requests">Forespørsler</button>
+      </nav>
+
+      <!-- SALGSSIDE (alltid tilgjengelig) -->
       <section id="view-sales">
         <div class="sales-header">
           <input
@@ -37,10 +50,10 @@
         </div>
 
         <div id="sales-categories" class="chip-row hidden">
-          <!-- Kategori-chips bygges i app.js -->
+          <!-- Kategori-chips genereres i app.js -->
         </div>
 
-        <section id="sales-list" class="item-list sales-list">
+        <section id="sales-list" class="item-list">
           <!-- Salgskort genereres i app.js -->
         </section>
       </section>
@@ -54,7 +67,7 @@
         </section>
 
         <section id="item-list" class="item-list">
-          <!-- Kort genereres i app.js -->
+          <!-- Admin-kort genereres i app.js -->
         </section>
       </section>
 
@@ -65,15 +78,22 @@
         </section>
       </section>
 
+      <!-- FORESPØRSLER (admin) -->
+      <section id="view-requests" class="hidden">
+        <section id="requests-list" class="item-list">
+          <!-- Forespørsler genereres i app.js -->
+        </section>
+      </section>
+
       <!-- DETALJVISNING / PRINT -->
       <section id="detail-view" class="detail-view">
         <!-- Fylles med én annonse når brukt -->
       </section>
 
-      <!-- FAB (legg til ny vare) -->
-      <button id="add-item-btn" class="fab" aria-label="Legg til ny ting">+</button>
+      <!-- FAB (legg til ny vare – bare når innlogget) -->
+      <button id="add-item-btn" class="fab hidden" aria-label="Legg til ny ting">+</button>
 
-      <!-- PANEL: NY / REDIGER VARE -->
+      <!-- PANEL: NY / REDIGER VARE (admin) -->
       <div id="item-form-panel" class="panel hidden">
         <div class="panel-inner">
           <h2 id="form-title">Ny ting</h2>
@@ -125,7 +145,7 @@
         </div>
       </div>
 
-      <!-- PANEL: INNSTILLINGER -->
+      <!-- PANEL: INNSTILLINGER (admin) -->
       <div id="settings-panel" class="panel hidden">
         <div class="panel-inner">
           <h2>Innstillinger</h2>
@@ -135,36 +155,10 @@
             <input type="text" id="settings-title" placeholder="F.eks. Niko sitt salgslager" />
           </label>
 
-          <div class="field">
-            <span>Tema</span>
-            <div class="settings-row">
-              <label><input type="radio" name="settings-theme" value="light" /> Lys</label>
-              <label><input type="radio" name="settings-theme" value="dark" /> Mørk</label>
-            </div>
-          </div>
-
-          <div class="field">
-            <span>Standardvisning</span>
-            <div class="settings-row">
-              <label><input type="radio" name="settings-view" value="sales" /> Salgsside</label>
-              <label><input type="radio" name="settings-view" value="list" /> Liste (admin)</label>
-              <label><input type="radio" name="settings-view" value="overview" /> Oversikt</label>
-            </div>
-          </div>
-
-          <div class="field">
-            <span>Backup</span>
-            <button type="button" id="export-btn" class="btn secondary">Eksporter data (JSON)</button>
-          </div>
-
-          <div class="field">
-            <span>Gå til visning nå</span>
-            <div class="settings-row">
-              <button type="button" id="goto-sales" class="btn secondary">Salgsside</button>
-              <button type="button" id="goto-list" class="btn secondary">Liste</button>
-              <button type="button" id="goto-overview" class="btn secondary">Oversikt</button>
-            </div>
-          </div>
+          <label class="field">
+            <span>Undertekst</span>
+            <input type="text" id="settings-subtitle" placeholder="F.eks. Alt jeg har til salgs akkurat nå" />
+          </label>
 
           <div class="form-actions">
             <button type="button" id="settings-close-btn" class="btn secondary">Lukk</button>
@@ -172,9 +166,45 @@
           </div>
         </div>
       </div>
+
+      <!-- PANEL: LOGIN -->
+      <div id="login-panel" class="panel hidden">
+        <div class="panel-inner">
+          <h2>Admin-innlogging</h2>
+          <p class="hint">
+            Logg inn med admin-brukeren du har opprettet i Supabase.
+          </p>
+          <label class="field">
+            <span>E-post</span>
+            <input type="email" id="login-email" placeholder="din@email.no" />
+          </label>
+          <label class="field">
+            <span>Passord</span>
+            <input type="password" id="login-password" placeholder="Passord" />
+          </label>
+          <div class="form-actions">
+            <button type="button" id="login-cancel-btn" class="btn secondary">Avbryt</button>
+            <button type="button" id="login-submit-btn" class="btn primary">Logg inn</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- PANEL: QR-KODE -->
+      <div id="qr-panel" class="panel hidden">
+        <div class="panel-inner qr-inner">
+          <h2>QR-kode til denne annonsen</h2>
+          <div class="qr-image-wrap">
+            <img id="qr-image" alt="QR-kode" />
+          </div>
+          <p class="hint">Skann med mobilkamera for å åpne annonsen.</p>
+          <div class="form-actions">
+            <button type="button" id="qr-close-btn" class="btn secondary">Lukk</button>
+          </div>
+        </div>
+      </div>
     </main>
   </div>
 
-  <script src="app.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>
