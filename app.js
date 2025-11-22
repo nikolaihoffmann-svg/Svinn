@@ -82,10 +82,17 @@ async function performLogin() {
 
 // MODAL helpers
 function showModal(sel) {
-  $(sel).classList.add("visible");
+  const el = $(sel);
+  if (!el) return;
+  el.classList.remove("hidden");
+  el.classList.add("visible");
 }
+
 function hideModal(sel) {
-  $(sel).classList.remove("visible");
+  const el = $(sel);
+  if (!el) return;
+  el.classList.remove("visible");
+  el.classList.add("hidden");
 }
 
 // DATA – ITEMS
