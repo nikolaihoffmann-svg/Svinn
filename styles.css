@@ -115,7 +115,7 @@ main {
   display: none;
 }
 
-/* FILTERS */
+/* FILTERS (ADMIN LISTE) */
 
 .filters {
   display: flex;
@@ -216,6 +216,7 @@ body.dark .card-image {
 .card-meta {
   font-size: 0.75rem;
   color: var(--text-muted);
+  white-space: pre-line;
 }
 
 .badges {
@@ -230,6 +231,7 @@ body.dark .card-image {
   border-radius: 999px;
   font-size: 0.7rem;
   font-weight: 500;
+  border: 1px solid rgba(148, 163, 184, 0.4);
 }
 
 .badge-sold {
@@ -443,6 +445,47 @@ body.dark .btn.secondary {
   font-size: 0.88rem;
 }
 
+/* SALGSSIDE */
+
+.sales-header {
+  padding: 0.75rem 1.25rem 0.25rem;
+}
+
+.search-input {
+  width: 100%;
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle);
+  padding: 0.5rem 0.9rem;
+  font-size: 0.9rem;
+  background: var(--card);
+  color: var(--text-main);
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding: 0.25rem 1.25rem 0.75rem;
+}
+
+.chip {
+  border-radius: 999px;
+  padding: 0.25rem 0.7rem;
+  font-size: 0.8rem;
+  border: 1px solid var(--border-subtle);
+  background: var(--card);
+  color: var(--text-main);
+  cursor: pointer;
+}
+
+.chip.active {
+  background: var(--accent);
+  color: var(--accent-text);
+  border-color: var(--accent);
+}
+
+/* Salgskort kan være samme som card, men uten admin-actions */
+
 /* DETALJVISNING / PRINT */
 
 .detail-view {
@@ -452,6 +495,7 @@ body.dark .btn.secondary {
 
 body.detail-open #view-list,
 body.detail-open #view-overview,
+body.detail-open #view-sales,
 body.detail-open .fab,
 body.detail-open .tabs,
 body.detail-open .filters {
@@ -505,6 +549,7 @@ body.detail-open .detail-view {
   font-size: 0.85rem;
   color: var(--text-muted);
   margin-bottom: 0.5rem;
+  white-space: pre-line;
 }
 
 .detail-body-text {
@@ -544,7 +589,9 @@ body.detail-open .detail-view {
   .item-list,
   .fab,
   .panel,
-  .theme-toggle {
+  .theme-toggle,
+  .sales-header,
+  .chip-row {
     display: none !important;
   }
 
