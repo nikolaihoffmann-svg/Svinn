@@ -16,13 +16,12 @@ let currentUser = null;
 let items = [];
 let requests = [];
 let currentFilter = "sale"; // "sale" | "sold" | "all"
-let currentCategory = null; // brukes nå kun som filter-state (ikke horisontale chips)
+let currentCategory = null; // null = alle
+let currentSort = "newest"; // "newest" | "oldest" | "price_desc" | "price_asc"
 let currentView = "market"; // "market" | "list" | "overview" | "requests"
 let editingItemId = null;
 let currentDetailsItemId = null;
-
-// NY: sorterings-state for filtermodal
-let currentSort = "date-desc"; // "date-desc" | "date-asc" | "price-desc" | "price-asc"
+let currentImageDataUrls = []; // flere bilder per vare
 
 // THEME
 function loadTheme() {
@@ -59,9 +58,9 @@ function updateAuthUI() {
   if (adminNav) adminNav.classList.toggle("hidden", !loggedIn);
   if (fab) fab.classList.toggle("hidden", !loggedIn);
 
-  // Gjester skal kun ha "salgssiden" (market view)
+  // sørg for at gjester alltid står på salgsside
   if (!loggedIn) {
-    switchView("market");
+    switchView("market", true);
   }
 }
 async function handleLoginClick() {
@@ -135,13 +134,10 @@ async function saveItemFromForm() {
     return;
   }
 
-  let imageDataUrl = null;
-
-  // Hvis vi allerede har en preview (redigering) – bruk den
-  const previewImg = $("#item-image-preview img");
-  if (previewImg) {
-    imageDataUrl = previewImg.src;
-  }
+  const image_urls =
+    Array.isArray(currentImageDataUrls) && currentImageDataUrls.length
+      ? currentImageDataUrls
+      : [];
 
   const payload = {
     title,
@@ -153,7 +149,10 @@ async function saveItemFromForm() {
     is_sold: markSold,
   };
 
-  if (imageDataUrl) payload.image_url = imageDataUrl;
+  if (image_urls.length) {
+    payload.image_urls = image_urls;
+    payload.image_url = image_urls[0];
+  }
 
   let error;
   if (editingItemId) {
@@ -174,6 +173,7 @@ async function saveItemFromForm() {
 
   hideModal("#item-modal");
   editingItemId = null;
+  currentImageDataUrls = [];
   await loadItems();
 }
 
@@ -187,11 +187,13 @@ async function deleteCurrentItem() {
   }
   hideModal("#item-modal");
   editingItemId = null;
+  currentImageDataUrls = [];
   await loadItems();
 }
 
 function openNewItemModal() {
   editingItemId = null;
+  currentImageDataUrls = [];
   $("#item-modal-title").textContent = "Ny ting";
   $("#item-title").value = "";
   $("#item-price").value = "";
@@ -200,9 +202,14 @@ function openNewItemModal() {
   $("#item-description").value = "";
   $("#item-mark-sold").checked = false;
   $("#item-delete").classList.add("hidden");
-  $("#item-image").value = "";
-  $("#item-image-preview").classList.add("hidden");
-  $("#item-image-preview").innerHTML = "";
+
+  const fileInput = $("#item-images");
+  if (fileInput) fileInput.value = "";
+
+  const previewBox = $("#item-image-preview");
+  previewBox.classList.add("hidden");
+  previewBox.innerHTML = "";
+
   showModal("#item-modal");
 }
 
@@ -218,13 +225,21 @@ function openEditItemModal(itemId) {
   $("#item-description").value = it.description || "";
   $("#item-mark-sold").checked = !!it.is_sold;
 
-  if (it.image_url) {
-    $("#item-image-preview").classList.remove("hidden");
-    $("#item-image-preview").innerHTML =
-      '<img src="' + it.image_url + '" alt="Forhåndsvisning" />';
+  const images = getImagesArray(it);
+  currentImageDataUrls = images.slice();
+
+  const previewBox = $("#item-image-preview");
+  previewBox.innerHTML = "";
+  if (images.length) {
+    previewBox.classList.remove("hidden");
+    images.forEach((src) => {
+      const img = document.createElement("img");
+      img.src = src;
+      img.alt = "Forhåndsvisning";
+      previewBox.appendChild(img);
+    });
   } else {
-    $("#item-image-preview").classList.add("hidden");
-    $("#item-image-preview").innerHTML = "";
+    previewBox.classList.add("hidden");
   }
 
   $("#item-delete").classList.remove("hidden");
@@ -290,20 +305,35 @@ async function sendRequestForCurrentItem() {
   alert("Forespørsel sendt ✔️");
 }
 
-// RENDERING – søk, filter, sort
+// FILTER & SORT
+
+function sortItems(list) {
+  const arr = [...list];
+  switch (currentSort) {
+    case "oldest":
+      return arr.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    case "price_desc":
+      return arr.sort(
+        (a, b) => (b.price || 0) - (a.price || 0)
+      );
+    case "price_asc":
+      return arr.sort(
+        (a, b) => (a.price || 0) - (b.price || 0)
+      );
+    case "newest":
+    default:
+      return arr.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  }
+}
 
 function applyFilterAndSearch(list, forAdmin = false) {
-  const q = ($("#search-input")?.value || "").trim().toLowerCase();
-
-  // 1) Filtrering på solgt/til salgs/alle
-  let out = list.filter((it) => {
+  const q = $("#search-input")?.value.trim().toLowerCase() || "";
+  let res = list.filter((it) => {
     if (currentFilter === "sale" && it.is_sold) return false;
     if (currentFilter === "sold" && !it.is_sold) return false;
 
-    // 2) kategori-filter (settes nå via filtermodal, ikke chips)
     if (currentCategory && it.category_key !== currentCategory) return false;
 
-    // 3) tekstsøk
     if (!q) return true;
     const text =
       (it.title || "") +
@@ -316,32 +346,12 @@ function applyFilterAndSearch(list, forAdmin = false) {
     return text.toLowerCase().includes(q);
   });
 
-  // 4) Sortering
-  out.sort((a, b) => {
-    const dateA = new Date(a.created_at || a.sold_at || 0);
-    const dateB = new Date(b.created_at || b.sold_at || 0);
-    const priceA = Number(a.price || 0);
-    const priceB = Number(b.price || 0);
-
-    switch (currentSort) {
-      case "date-asc":
-        return dateA - dateB;
-      case "price-desc":
-        return priceB - priceA;
-      case "price-asc":
-        return priceA - priceB;
-      case "date-desc":
-      default:
-        return dateB - dateA;
-    }
-  });
-
-  return out;
+  return sortItems(res);
 }
 
+// RENDERING
+
 function renderAll() {
-  // Ikke vis horisontale kategorichips lenger
-  renderCategories();
   renderItemsForMarket();
   renderItemsForAdmin();
   renderOverview();
@@ -379,10 +389,6 @@ function renderItemCard(it, isAdmin) {
 
   const priceText = it.price != null ? `${it.price.toLocaleString("no-NO")} kr` : "Gi bud";
 
-  const imageHtml = it.image_url
-    ? `<div class="image-thumb"><img src="${it.image_url}" alt="Bilde av ${it.title}" /></div>`
-    : "";
-
   const dateStr = it.created_at
     ? new Date(it.created_at).toLocaleDateString("no-NO")
     : "";
@@ -393,6 +399,17 @@ function renderItemCard(it, isAdmin) {
 
   const locBadge = it.location
     ? `<span class="badge badge-grey">${escapeHtml(it.location)}</span>`
+    : "";
+
+  const images = getImagesArray(it);
+  const titleEsc = escapeHtml(it.title || "");
+
+  const thumbHtml = images.length
+    ? `
+      <div class="image-thumb">
+        <img src="${images[0]}" alt="Bilde av ${titleEsc}" />
+      </div>
+    `
     : "";
 
   const adminBtns = isAdmin
@@ -428,20 +445,24 @@ function renderItemCard(it, isAdmin) {
 
   return `
     <article class="card">
-      <div class="card-header">
-        <h2 class="card-title">${escapeHtml(it.title || "")}</h2>
-        <div class="card-price">${priceText}</div>
+      <div class="card-main">
+        ${thumbHtml}
+        <div class="card-main-text">
+          <div class="card-header">
+            <h2 class="card-title">${titleEsc}</h2>
+            <div class="card-price">${priceText}</div>
+          </div>
+          <p class="card-sub">
+            ${it.description ? escapeHtml(it.description) + "<br>" : ""}
+            ${dateStr ? "Lagt ut: " + dateStr : ""}
+          </p>
+          <div class="badges-row">
+            ${statusBadge}
+            ${catBadge}
+            ${locBadge}
+          </div>
+        </div>
       </div>
-      <p class="card-sub">
-        ${it.description ? escapeHtml(it.description) + "<br>" : ""}
-        ${dateStr ? "Lagt ut: " + dateStr : ""}
-      </p>
-      <div class="badges-row">
-        ${statusBadge}
-        ${catBadge}
-        ${locBadge}
-      </div>
-      ${imageHtml}
       ${adminBtns}
     </article>
   `;
@@ -479,9 +500,28 @@ function openDetailsModal(itemId) {
       ? "Solgt: " + new Date(it.sold_at).toLocaleDateString("no-NO")
       : "";
 
-  const imageHtml = it.image_url
-    ? `<div class="image-thumb"><img src="${it.image_url}" alt="Bilde av ${it.title}" /></div>`
-    : "";
+  const images = getImagesArray(it);
+  let galleryHtml = "";
+  if (images.length) {
+    const main = images[0];
+    galleryHtml += `
+      <div class="image-thumb">
+        <img src="${main}" alt="Bilde av ${escapeHtml(it.title || "")}" />
+      </div>
+    `;
+    if (images.length > 1) {
+      galleryHtml += `
+        <div class="image-strip image-strip-details">
+          ${images
+            .map(
+              (src) =>
+                `<img src="${src}" alt="Flere bilder av ${escapeHtml(it.title || "")}" />`
+            )
+            .join("")}
+        </div>
+      `;
+    }
+  }
 
   $("#details-content").innerHTML = `
     <h2>${escapeHtml(it.title || "")}</h2>
@@ -500,17 +540,63 @@ function openDetailsModal(itemId) {
       }
       ${it.category ? `<span class="badge badge-grey">${escapeHtml(it.category)}</span>` : ""}
     </div>
-    ${imageHtml}
+    ${galleryHtml}
   `;
   showModal("#details-modal");
 }
 
-// Categories – vi bruker ikke lenger baren til filter, så den holdes tom
-function renderCategories() {
-  const bar = $("#category-bar");
-  if (bar) {
-    bar.innerHTML = "";
-  }
+// FILTER-MODAL (kategori + sort)
+
+function buildFilterCategories() {
+  const cont = $("#filter-category-container");
+  if (!cont) return;
+  cont.innerHTML = "";
+
+  const allCats = Array.from(
+    new Set(
+      items
+        .map((i) => (i.category ? i.category.trim() : ""))
+        .filter((c) => c.length > 0)
+    )
+  ).sort((a, b) => a.localeCompare(b, "no"));
+
+  // "Alle kategorier"
+  const allBtn = document.createElement("button");
+  allBtn.type = "button";
+  allBtn.className =
+    "filter-cat-pill" + (currentCategory === null ? " active" : "");
+  allBtn.textContent = "Alle kategorier";
+  allBtn.dataset.cat = "__ALL__";
+  cont.appendChild(allBtn);
+
+  allCats.forEach((c) => {
+    const key = c.toLowerCase();
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className =
+      "filter-cat-pill" + (currentCategory === key ? " active" : "");
+    btn.textContent = c;
+    btn.dataset.cat = key;
+    cont.appendChild(btn);
+  });
+
+  // klikk-håndtering
+  cont.querySelectorAll(".filter-cat-pill").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      cont.querySelectorAll(".filter-cat-pill").forEach((b) =>
+        b.classList.remove("active")
+      );
+      btn.classList.add("active");
+    });
+  });
+}
+
+function openFilterModal() {
+  // sett sort-select til currentSort
+  const sortSelect = $("#sort-select");
+  if (sortSelect) sortSelect.value = currentSort;
+  buildFilterCategories();
+  showModal("#filter-modal");
 }
 
 // Overview
@@ -570,21 +656,38 @@ function shareItemLink(itemId) {
   }
 }
 
-// File -> base64 preview
-$("#item-image")?.addEventListener("change", (e) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = () => {
-    $("#item-image-preview").classList.remove("hidden");
-    $("#item-image-preview").innerHTML =
-      '<img src="' + reader.result + '" alt="Forhåndsvisning" />';
-  };
-  reader.readAsDataURL(file);
-});
+// Utils
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+// Hent bilder-array fra item (støtter både image_urls json og gammel image_url)
+function getImagesArray(it) {
+  if (!it) return [];
+  if (Array.isArray(it.image_urls) && it.image_urls.length) {
+    return it.image_urls;
+  }
+  if (typeof it.image_urls === "string") {
+    try {
+      const parsed = JSON.parse(it.image_urls);
+      if (Array.isArray(parsed)) return parsed;
+    } catch (e) {
+      console.warn("Klarte ikke å parse image_urls:", e);
+    }
+  }
+  if (it.image_url) return [it.image_url];
+  return [];
+}
 
 // View switching
-function switchView(v) {
+function switchView(v, force = false) {
+  if (!force && !currentUser && v !== "market") {
+    // gjester får bare se salgssiden
+    return;
+  }
   currentView = v;
   $$("#admin-nav .nav-pill").forEach((btn) => {
     btn.classList.toggle(
@@ -593,78 +696,9 @@ function switchView(v) {
     );
   });
   ["market", "list", "overview", "requests"].forEach((id) => {
-    $("#" + id + "-view").classList.toggle("active-view", id === v);
+    $("#" + id + "-view")?.classList.toggle("active-view", id === v);
   });
   if (v === "requests") loadRequests();
-}
-
-// Filter tabs (Til salgs / Solgt / Alle)
-function setupTabs() {
-  $$(".tab-pill").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      currentFilter = btn.getAttribute("data-filter");
-      $$(".tab-pill").forEach((b) =>
-        b.classList.toggle("tab-active", b === btn)
-      );
-      renderAll();
-    });
-  });
-}
-
-// FILTERMODAL – sortering + kategori
-
-function buildFilterCategories() {
-  const cont = $("#filter-category-container");
-  if (!cont) return;
-
-  const allCats = Array.from(
-    new Set(
-      items
-        .map((i) => (i.category ? i.category.trim() : ""))
-        .filter((c) => c.length > 0)
-    )
-  );
-
-  if (!allCats.length) {
-    cont.innerHTML =
-      '<p style="font-size:12px;color:var(--fg-soft);">Ingen kategorier enda.</p>';
-    return;
-  }
-
-  const chips = [];
-  chips.push(
-    `<button class="filter-cat-pill${
-      currentCategory === null ? " active" : ""
-    }" data-cat="__ALL__">Alle kategorier</button>`
-  );
-
-  for (const c of allCats) {
-    const key = c.toLowerCase();
-    chips.push(
-      `<button class="filter-cat-pill${
-        currentCategory === key ? " active" : ""
-      }" data-cat="${key}">${escapeHtml(c)}</button>`
-    );
-  }
-
-  cont.innerHTML = chips.join("");
-}
-
-function openFilterModal() {
-  const sortSelect = $("#sort-select");
-  if (sortSelect) {
-    sortSelect.value = currentSort;
-  }
-  buildFilterCategories();
-  showModal("#filter-modal");
-}
-
-// Utils
-function escapeHtml(str) {
-  return String(str)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
 }
 
 // INIT
@@ -698,41 +732,71 @@ function initEvents() {
     });
   });
 
-  setupTabs();
-
-  // 🔸 Filter-knapp
+  // Filter-knapp
   $("#filter-btn")?.addEventListener("click", openFilterModal);
-
-  // 🔸 Filter – kategori-click (delegert)
-  $("#filter-category-container")?.addEventListener("click", (e) => {
-    const btn = e.target.closest(".filter-cat-pill");
-    if (!btn) return;
-    const val = btn.getAttribute("data-cat");
-    currentCategory = val === "__ALL__" ? null : val;
-
-    $$("#filter-category-container .filter-cat-pill").forEach((b) => {
-      b.classList.toggle("active", b === btn);
-    });
-  });
-
-  // 🔸 Filter – Bruk
   $("#filter-apply")?.addEventListener("click", () => {
     const sortSelect = $("#sort-select");
     if (sortSelect) {
       currentSort = sortSelect.value;
     }
+    // finn aktiv kategori
+    const activeCatBtn = $("#filter-category-container .filter-cat-pill.active");
+    if (activeCatBtn) {
+      const cat = activeCatBtn.dataset.cat;
+      currentCategory = cat === "__ALL__" ? null : cat;
+    }
+    hideModal("#filter-modal");
+    renderAll();
+  });
+  $("#filter-reset")?.addEventListener("click", () => {
+    currentSort = "newest";
+    currentCategory = null;
+    const sortSelect = $("#sort-select");
+    if (sortSelect) sortSelect.value = "newest";
     hideModal("#filter-modal");
     renderAll();
   });
 
-  // 🔸 Filter – Nullstill
-  $("#filter-reset")?.addEventListener("click", () => {
-    currentSort = "date-desc";
-    currentCategory = null;
-    const sortSelect = $("#sort-select");
-    if (sortSelect) sortSelect.value = "date-desc";
-    buildFilterCategories();
-    renderAll();
+  // Bildefelt (flere bilder)
+  const imgInput = $("#item-images");
+  if (imgInput) {
+    imgInput.addEventListener("change", (e) => {
+      const files = Array.from(e.target.files || []);
+      const previewBox = $("#item-image-preview");
+      previewBox.innerHTML = "";
+      currentImageDataUrls = [];
+
+      if (!files.length) {
+        previewBox.classList.add("hidden");
+        return;
+      }
+
+      previewBox.classList.remove("hidden");
+
+      files.forEach((file) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const src = reader.result;
+          currentImageDataUrls.push(src);
+          const img = document.createElement("img");
+          img.src = src;
+          img.alt = "Forhåndsvisning";
+          previewBox.appendChild(img);
+        };
+        reader.readAsDataURL(file);
+      });
+    });
+  }
+
+  // Tabs
+  $$(".tab-pill").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      currentFilter = btn.getAttribute("data-filter");
+      $$(".tab-pill").forEach((b) =>
+        b.classList.toggle("tab-active", b === btn)
+      );
+      renderAll();
+    });
   });
 }
 
