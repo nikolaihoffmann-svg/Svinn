@@ -24,9 +24,10 @@
       <nav class="tabs">
         <button class="tab-btn active" data-view="list">Liste</button>
         <button class="tab-btn" data-view="overview">Oversikt</button>
+        <button class="tab-btn" data-view="sales">Salgsside</button>
       </nav>
 
-      <!-- LISTEVISNING -->
+      <!-- LISTEVISNING (ADMIN) -->
       <section id="view-list">
         <section id="filters" class="filters">
           <button class="filter-btn active" data-filter="active">Til salgs</button>
@@ -43,6 +44,26 @@
       <section id="view-overview" class="hidden">
         <section id="overview-content" class="overview">
           <!-- Fylles i app.js -->
+        </section>
+      </section>
+
+      <!-- SALGSSIDE / KUNDEVISNING -->
+      <section id="view-sales" class="hidden">
+        <div class="sales-header">
+          <input
+            type="search"
+            id="sales-search"
+            class="search-input"
+            placeholder="Søk i varer til salgs..."
+          />
+        </div>
+
+        <div id="sales-categories" class="chip-row">
+          <!-- Kategori-chips bygges i app.js -->
+        </div>
+
+        <section id="sales-list" class="item-list sales-list">
+          <!-- Salgskort genereres i app.js -->
         </section>
       </section>
 
@@ -69,6 +90,11 @@
             <label class="field">
               <span>Pris (kr)</span>
               <input type="number" id="item-price" min="0" step="1" required placeholder="F.eks. 1500" />
+            </label>
+
+            <label class="field">
+              <span>Kategori</span>
+              <input type="text" id="item-category" placeholder="F.eks. bil, verktøy, elektronikk..." />
             </label>
 
             <label class="field">
