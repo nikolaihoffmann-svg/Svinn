@@ -8,21 +8,23 @@
 </head>
 <body>
   <div class="app-shell">
+    <!-- HEADER -->
     <header class="app-header">
-      <div class="title-block">
-        <h1 id="app-title" class="brand-title">EkstraVerdi</h1>
-        <p id="app-subtitle" class="brand-subtitle">
-          -Gjør det du ikke trenger, om til ekstra penger
-        </p>
-      </div>
-      <div class="header-actions">
-        <button id="theme-toggle" class="icon-btn" aria-label="Bytt tema">🌙</button>
-        <button id="login-btn" class="pill-btn pill-small">Logg inn</button>
+      <div class="header-card">
+        <div class="title-block">
+          <!-- Disse to kan du endre fritt -->
+          <h1 id="app-title">EkstraVerdi</h1>
+          <p id="app-subtitle">-Gjør det du ikke trenger, om til ekstra penger</p>
+        </div>
+        <div class="header-actions">
+          <button id="theme-toggle" class="icon-btn" aria-label="Bytt tema">🌙</button>
+          <button id="login-btn" class="pill-btn pill-small">Logg inn</button>
+        </div>
       </div>
     </header>
 
     <main class="app-main">
-      <!-- Admin-nav (skjules for gjester) -->
+      <!-- Admin-nav (skjules for gjester av app.js) -->
       <nav id="admin-nav" class="admin-nav hidden">
         <button data-view="market" class="nav-pill nav-pill-active">Salgsside</button>
         <button data-view="list" class="nav-pill">Liste (admin)</button>
@@ -30,8 +32,8 @@
         <button data-view="requests" class="nav-pill">Forespørsler</button>
       </nav>
 
-      <!-- Søk + filter -->
-      <section class="search-section" id="search-section">
+      <!-- Søk -->
+      <section class="search-section">
         <input
           id="search-input"
           type="search"
@@ -39,46 +41,63 @@
         />
       </section>
 
-      <!-- Faner (til salgs / solgt / alle) -->
+      <!-- Faner (Til salgs / Solgt / Alle) -->
       <section class="tabs-section">
         <button class="tab-pill tab-active" data-filter="sale">Til salgs</button>
         <button class="tab-pill" data-filter="sold">Solgt</button>
         <button class="tab-pill" data-filter="all">Alle</button>
       </section>
 
-      <!-- Kategori-knapper (genereres dynamisk) -->
+      <!-- Kategorier -->
       <section id="category-bar" class="category-bar"></section>
 
-      <!-- Ulike “views” -->
+      <!-- VISNINGER -->
+
+      <!-- Marked (kundevisning) -->
       <section id="market-view" class="view active-view">
         <div id="items-container" class="cards-list"></div>
       </section>
 
+      <!-- Admin-liste -->
       <section id="list-view" class="view">
         <div id="admin-items-container" class="cards-list"></div>
       </section>
 
+      <!-- Oversikt -->
       <section id="overview-view" class="view">
         <div class="overview-card">
           <h2>Oversikt</h2>
-          <p><span class="label">Antall varer til salgs:</span> <span id="count-onsale">0</span></p>
-          <p><span class="label">Antall solgte varer:</span> <span id="count-sold">0</span></p>
-          <p><span class="label">Ordrereserve (hvis alt selges):</span> <span id="sum-reserve">0 kr</span></p>
-          <p><span class="label">Totalt tjent på salg:</span> <span id="sum-sold">0 kr</span></p>
+          <p>
+            <span class="label">Antall varer til salgs:</span>
+            <span id="count-onsale">0</span>
+          </p>
+          <p>
+            <span class="label">Antall solgte varer:</span>
+            <span id="count-sold">0</span>
+          </p>
+          <p>
+            <span class="label">Ordrereserve (hvis alt selges):</span>
+            <span id="sum-reserve">0 kr</span>
+          </p>
+          <p>
+            <span class="label">Totalt tjent på salg:</span>
+            <span id="sum-sold">0 kr</span>
+          </p>
         </div>
       </section>
 
+      <!-- Forespørsler -->
       <section id="requests-view" class="view">
         <h2>Forespørsler</h2>
         <div id="requests-container" class="cards-list"></div>
       </section>
     </main>
 
-    <!-- Flytende +-knapp (kun admin) -->
-    <button id="fab-add" class="fab hidden">+</button>
+    <!-- Flytende +-knapp (kun admin, styres av app.js) -->
+    <button id="fab-add" class="fab hidden" aria-label="Ny vare">+</button>
   </div>
 
-  <!-- Modal: Logg inn -->
+  <!-- MODAL: Logg inn -->
   <div id="login-modal" class="modal hidden">
     <div class="modal-backdrop"></div>
     <div class="modal-content">
@@ -98,7 +117,7 @@
     </div>
   </div>
 
-  <!-- Modal: Ny / rediger vare -->
+  <!-- MODAL: Ny / rediger vare -->
   <div id="item-modal" class="modal hidden">
     <div class="modal-backdrop"></div>
     <div class="modal-content modal-scroll">
@@ -135,7 +154,9 @@
       </label>
 
       <div class="modal-actions">
-        <button id="item-delete" class="pill-btn pill-danger pill-left hidden">Slett</button>
+        <button id="item-delete" class="pill-btn pill-danger pill-left hidden">
+          Slett
+        </button>
         <div class="modal-actions-right">
           <button id="item-cancel" class="pill-btn pill-ghost">Avbryt</button>
           <button id="item-save" class="pill-btn">Lagre</button>
@@ -144,7 +165,7 @@
     </div>
   </div>
 
-  <!-- Modal: Detaljer + “send forespørsel” for kunder -->
+  <!-- MODAL: Detaljer + forespørsel -->
   <div id="details-modal" class="modal hidden">
     <div class="modal-backdrop"></div>
     <div class="modal-content modal-scroll">
@@ -165,7 +186,11 @@
       </label>
       <label>
         Melding
-        <textarea id="req-message" rows="3" placeholder="F.eks. bud, spørsmål osv."></textarea>
+        <textarea
+          id="req-message"
+          rows="3"
+          placeholder="F.eks. bud, spørsmål osv."
+        ></textarea>
       </label>
       <div class="modal-actions">
         <button id="details-close" class="pill-btn pill-ghost">Lukk</button>
@@ -174,6 +199,7 @@
     </div>
   </div>
 
+  <!-- JS (den vi nettopp fikset) -->
   <script type="module" src="app.js"></script>
 </body>
 </html>
