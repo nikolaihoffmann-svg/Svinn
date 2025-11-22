@@ -10,9 +10,10 @@
   <div class="app-shell">
     <header class="app-header">
       <div class="title-block">
-        <!-- Disse kan du endre fritt -->
-        <h1 id="app-title">EkstraVerdi</h1>
-        <p id="app-subtitle">-Gjør det du ikke trenger, om til ekstra penger</p>
+        <h1 id="app-title" class="brand-title">EkstraVerdi</h1>
+        <p id="app-subtitle" class="brand-subtitle">
+          -Gjør det du ikke trenger, om til ekstra penger
+        </p>
       </div>
       <div class="header-actions">
         <button id="theme-toggle" class="icon-btn" aria-label="Bytt tema">🌙</button>
@@ -31,7 +32,11 @@
 
       <!-- Søk + filter -->
       <section class="search-section" id="search-section">
-        <input id="search-input" type="search" placeholder="Søk etter tittel, kategori, lagerplass…" />
+        <input
+          id="search-input"
+          type="search"
+          placeholder="Søk etter tittel, kategori, lagerplass…"
+        />
       </section>
 
       <!-- Faner (til salgs / solgt / alle) -->
@@ -45,4 +50,130 @@
       <section id="category-bar" class="category-bar"></section>
 
       <!-- Ulike “views” -->
-     
+      <section id="market-view" class="view active-view">
+        <div id="items-container" class="cards-list"></div>
+      </section>
+
+      <section id="list-view" class="view">
+        <div id="admin-items-container" class="cards-list"></div>
+      </section>
+
+      <section id="overview-view" class="view">
+        <div class="overview-card">
+          <h2>Oversikt</h2>
+          <p><span class="label">Antall varer til salgs:</span> <span id="count-onsale">0</span></p>
+          <p><span class="label">Antall solgte varer:</span> <span id="count-sold">0</span></p>
+          <p><span class="label">Ordrereserve (hvis alt selges):</span> <span id="sum-reserve">0 kr</span></p>
+          <p><span class="label">Totalt tjent på salg:</span> <span id="sum-sold">0 kr</span></p>
+        </div>
+      </section>
+
+      <section id="requests-view" class="view">
+        <h2>Forespørsler</h2>
+        <div id="requests-container" class="cards-list"></div>
+      </section>
+    </main>
+
+    <!-- Flytende +-knapp (kun admin) -->
+    <button id="fab-add" class="fab hidden">+</button>
+  </div>
+
+  <!-- Modal: Logg inn -->
+  <div id="login-modal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+      <h2>Logg inn (admin)</h2>
+      <label>
+        E-post
+        <input id="login-email" type="email" autocomplete="email" />
+      </label>
+      <label>
+        Passord
+        <input id="login-password" type="password" autocomplete="current-password" />
+      </label>
+      <div class="modal-actions">
+        <button id="login-cancel" class="pill-btn pill-ghost">Avbryt</button>
+        <button id="login-submit" class="pill-btn">Logg inn</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Ny / rediger vare -->
+  <div id="item-modal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content modal-scroll">
+      <h2 id="item-modal-title">Ny ting</h2>
+      <label>
+        Tittel
+        <input id="item-title" type="text" />
+      </label>
+      <label>
+        Pris (kr)
+        <input id="item-price" type="number" inputmode="numeric" />
+      </label>
+      <label>
+        Kategori
+        <input id="item-category" type="text" placeholder="Bil, Verktøy, Elektronikk…" />
+      </label>
+      <label>
+        Lagerplass
+        <input id="item-location" type="text" placeholder="Garasjen, Loftet, Bod…" />
+      </label>
+      <label>
+        Beskrivelse
+        <textarea id="item-description" rows="3"></textarea>
+      </label>
+      <label>
+        Bilde
+        <input id="item-image" type="file" accept="image/*" />
+        <small>Du kan ta bilde direkte med mobilen.</small>
+      </label>
+      <div id="item-image-preview" class="image-preview hidden"></div>
+      <label class="checkbox-row">
+        <input id="item-mark-sold" type="checkbox" />
+        <span>Marker som solgt</span>
+      </label>
+
+      <div class="modal-actions">
+        <button id="item-delete" class="pill-btn pill-danger pill-left hidden">Slett</button>
+        <div class="modal-actions-right">
+          <button id="item-cancel" class="pill-btn pill-ghost">Avbryt</button>
+          <button id="item-save" class="pill-btn">Lagre</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Detaljer + “send forespørsel” for kunder -->
+  <div id="details-modal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content modal-scroll">
+      <div id="details-content"></div>
+      <hr />
+      <h3>Send forespørsel på varen</h3>
+      <label>
+        Navn
+        <input id="req-name" type="text" />
+      </label>
+      <label>
+        E-post
+        <input id="req-email" type="email" />
+      </label>
+      <label>
+        Telefon
+        <input id="req-phone" type="tel" />
+      </label>
+      <label>
+        Melding
+        <textarea id="req-message" rows="3" placeholder="F.eks. bud, spørsmål osv."></textarea>
+      </label>
+      <div class="modal-actions">
+        <button id="details-close" class="pill-btn pill-ghost">Lukk</button>
+        <button id="req-send" class="pill-btn">Send forespørsel</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
