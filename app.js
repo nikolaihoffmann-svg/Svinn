@@ -15,7 +15,7 @@ const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 let currentUser = null;
 let items = [];
 let requests = [];
-let currentFilter = "sale"; // "sale" | "sold" | "all"
+let currentFilter = "sale";
 let currentCategory = null;
 let currentView = "market"; // "market" | "list" | "overview" | "requests"
 let editingItemId = null;
@@ -23,6 +23,7 @@ let currentDetailsItemId = null;
 
 // THEME
 function loadTheme() {
+  // Lys som standard
   const t = localStorage.getItem("svinn_theme") || "light";
   if (t === "light") document.documentElement.classList.add("light");
   else document.documentElement.classList.remove("light");
@@ -36,41 +37,7 @@ function toggleTheme() {
 function updateThemeButton() {
   const btn = $("#theme-toggle");
   const isLight = document.documentElement.classList.contains("light");
-  btn.textContent = isLight ? "🌙" : "☀️";
-}
-
-// HEADER / INNSTILLINGER
-const SETTINGS_KEY = "svinn_header";
-
-function loadHeaderSettings() {
-  const raw = localStorage.getItem(SETTINGS_KEY);
-  if (!raw) return;
-  try {
-    const s = JSON.parse(raw);
-    if (s.title) $("#app-title").textContent = s.title;
-    if (s.subtitle) $("#app-subtitle").textContent = s.subtitle;
-  } catch (e) {
-    console.error("Kunne ikke lese header-innstillinger", e);
-  }
-}
-
-function openSettingsModal() {
-  $("#settings-title").value = $("#app-title").textContent;
-  $("#settings-subtitle").value = $("#app-subtitle").textContent;
-  showModal("#settings-modal");
-}
-
-function saveSettings() {
-  const title = $("#settings-title").value.trim();
-  const subtitle = $("#settings-subtitle").value.trim();
-
-  if (title) $("#app-title").textContent = title;
-  if (subtitle) $("#app-subtitle").textContent = subtitle;
-
-  const obj = { title, subtitle };
-  localStorage.setItem(SETTINGS_KEY, JSON.stringify(obj));
-
-  hideModal("#settings-modal");
+  btn.textContent = isLight ? "☀️" : "🌙";
 }
 
 // AUTH
@@ -79,14 +46,35 @@ async function checkSession() {
   currentUser = data.session?.user ?? null;
   updateAuthUI();
 }
+
 function updateAuthUI() {
   const loggedIn = !!currentUser;
+
+  // Tekst på knapp
   $("#login-btn").textContent = loggedIn ? "Logg ut" : "Logg inn";
 
-  // Kunde: ser kun salgssiden. Admin får admin-nav + +knapp.
+  // Admin-ting (bare for innlogget)
   $("#admin-nav").classList.toggle("hidden", !loggedIn);
   $("#fab-add").classList.toggle("hidden", !loggedIn);
+
+  // "Alle"-fanen – kun for innlogget
+  const allTab = document.querySelector('.tab-pill[data-filter="all"]');
+  if (allTab) {
+    allTab.classList.toggle("hidden", !loggedIn);
+
+    // Hvis vi logger ut mens "Alle" var aktiv -> hopp til "Til salgs"
+    if (!loggedIn && allTab.classList.contains("tab-active")) {
+      const saleTab = document.querySelector('.tab-pill[data-filter="sale"]');
+      if (saleTab) {
+        allTab.classList.remove("tab-active");
+        saleTab.classList.add("tab-active");
+        currentFilter = "sale";
+        renderAll();
+      }
+    }
+  }
 }
+
 async function handleLoginClick() {
   if (currentUser) {
     await supabase.auth.signOut();
@@ -96,6 +84,7 @@ async function handleLoginClick() {
   }
   showModal("#login-modal");
 }
+
 async function performLogin() {
   const email = $("#login-email").value.trim();
   const password = $("#login-password").value;
@@ -118,10 +107,16 @@ async function performLogin() {
 
 // MODAL helpers
 function showModal(sel) {
-  $(sel).classList.add("visible");
+  const el = $(sel);
+  if (!el) return;
+  el.classList.remove("hidden");
+  el.classList.add("visible");
 }
 function hideModal(sel) {
-  $(sel).classList.remove("visible");
+  const el = $(sel);
+  if (!el) return;
+  el.classList.remove("visible");
+  el.classList.add("hidden");
 }
 
 // DATA – ITEMS
@@ -154,6 +149,7 @@ async function saveItemFromForm() {
 
   let imageDataUrl = null;
 
+  // Hvis vi allerede har en preview (redigering) – bruk den
   const previewImg = $("#item-image-preview img");
   if (previewImg) {
     imageDataUrl = previewImg.src;
@@ -163,7 +159,7 @@ async function saveItemFromForm() {
     title,
     price,
     category,
-    category_key: category ? category.toLowerCase() : null,
+    category_key: category.toLowerCase(),
     location,
     description,
     is_sold: markSold,
@@ -208,7 +204,7 @@ async function deleteCurrentItem() {
 
 function openNewItemModal() {
   editingItemId = null;
-  $("#item-modal-title").textContent = "Ny vare";
+  $("#item-modal-title").textContent = "Ny ting";
   $("#item-title").value = "";
   $("#item-price").value = "";
   $("#item-category").value = "";
@@ -226,7 +222,7 @@ function openEditItemModal(itemId) {
   const it = items.find((i) => i.id === itemId);
   if (!it) return;
   editingItemId = itemId;
-  $("#item-modal-title").textContent = "Rediger vare";
+  $("#item-modal-title").textContent = "Rediger ting";
   $("#item-title").value = it.title || "";
   $("#item-price").value = it.price ?? "";
   $("#item-category").value = it.category || "";
@@ -250,7 +246,10 @@ function openEditItemModal(itemId) {
 async function toggleSold(itemId, makeSold) {
   const { error } = await supabase
     .from("items")
-    .update({ is_sold: makeSold, sold_at: makeSold ? new Date().toISOString() : null })
+    .update({
+      is_sold: makeSold,
+      sold_at: makeSold ? new Date().toISOString() : null,
+    })
     .eq("id", itemId);
   if (error) {
     alert("Feil ved oppdatering: " + error.message);
@@ -492,7 +491,11 @@ function openDetailsModal(itemId) {
           ? '<span class="badge badge-red">Solgt</span>'
           : '<span class="badge badge-green">Til salgs</span>'
       }
-      ${it.category ? `<span class="badge badge-grey">${escapeHtml(it.category)}</span>` : ""}
+      ${
+        it.category
+          ? `<span class="badge badge-grey">${escapeHtml(it.category)}</span>`
+          : ""
+      }
     </div>
     ${imageHtml}
   `;
@@ -571,7 +574,9 @@ function renderRequests() {
         r.buyer_email ? "· " + escapeHtml(r.buyer_email) : ""
       } ${r.buyer_phone ? "· " + escapeHtml(r.buyer_phone) : ""}
         </div>
-        <div>${r.message ? escapeHtml(r.message) : "<i>Ingen melding</i>"}</div>
+        <div>${
+          r.message ? escapeHtml(r.message) : "<i>Ingen melding</i>"
+        }</div>
       </article>
     `;
     })
@@ -585,7 +590,7 @@ function shareItemLink(itemId) {
   const link = url.toString();
 
   if (navigator.share) {
-    navigator.share({ title: "Vare til salgs", url: link }).catch(() => {});
+    navigator.share({ title: "EkstraVerdi – vare", url: link }).catch(() => {});
   } else {
     navigator.clipboard.writeText(link).catch(() => {});
     alert("Lenke kopiert til utklippstavle:\n" + link);
@@ -605,7 +610,7 @@ $("#item-image")?.addEventListener("change", (e) => {
   reader.readAsDataURL(file);
 });
 
-// View switching (kun admin ser nav-knappene)
+// View switching
 function switchView(v) {
   currentView = v;
   $$("#admin-nav .nav-pill").forEach((btn) => {
@@ -624,7 +629,8 @@ function switchView(v) {
 function setupTabs() {
   $$(".tab-pill").forEach((btn) => {
     btn.addEventListener("click", () => {
-      currentFilter = btn.getAttribute("data-filter");
+      const filter = btn.getAttribute("data-filter");
+      currentFilter = filter;
       $$(".tab-pill").forEach((b) =>
         b.classList.toggle("tab-active", b === btn)
       );
@@ -650,12 +656,6 @@ function initEvents() {
     hideModal("#login-modal")
   );
   $("#login-submit").addEventListener("click", performLogin);
-
-  $("#settings-btn").addEventListener("click", openSettingsModal);
-  $("#settings-cancel").addEventListener("click", () =>
-    hideModal("#settings-modal")
-  );
-  $("#settings-save").addEventListener("click", saveSettings);
 
   $("#fab-add").addEventListener("click", openNewItemModal);
   $("#item-cancel").addEventListener("click", () =>
@@ -685,6 +685,7 @@ async function initFromDeepLink() {
   const url = new URL(window.location.href);
   const itemId = url.searchParams.get("item");
   if (itemId) {
+    // vent litt til items er lastet
     const check = setInterval(() => {
       if (items.length) {
         clearInterval(check);
@@ -696,7 +697,6 @@ async function initFromDeepLink() {
 
 async function init() {
   loadTheme();
-  loadHeaderSettings();
   initEvents();
   await checkSession();
   await loadItems();
