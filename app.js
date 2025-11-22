@@ -15,11 +15,14 @@ const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 let currentUser = null;
 let items = [];
 let requests = [];
-let currentFilter = "sale";
-let currentCategory = null;
+let currentFilter = "sale"; // "sale" | "sold" | "all"
+let currentCategory = null; // brukes nå kun som filter-state (ikke horisontale chips)
 let currentView = "market"; // "market" | "list" | "overview" | "requests"
 let editingItemId = null;
 let currentDetailsItemId = null;
+
+// NY: sorterings-state for filtermodal
+let currentSort = "date-desc"; // "date-desc" | "date-asc" | "price-desc" | "price-asc"
 
 // THEME
 function loadTheme() {
@@ -56,7 +59,7 @@ function updateAuthUI() {
   if (adminNav) adminNav.classList.toggle("hidden", !loggedIn);
   if (fab) fab.classList.toggle("hidden", !loggedIn);
 
-  // sørg for at gjester alltid står på salgsside
+  // Gjester skal kun ha "salgssiden" (market view)
   if (!loggedIn) {
     switchView("market");
   }
@@ -287,16 +290,20 @@ async function sendRequestForCurrentItem() {
   alert("Forespørsel sendt ✔️");
 }
 
-// RENDERING
+// RENDERING – søk, filter, sort
 
 function applyFilterAndSearch(list, forAdmin = false) {
-  const q = $("#search-input").value.trim().toLowerCase();
-  return list.filter((it) => {
+  const q = ($("#search-input")?.value || "").trim().toLowerCase();
+
+  // 1) Filtrering på solgt/til salgs/alle
+  let out = list.filter((it) => {
     if (currentFilter === "sale" && it.is_sold) return false;
     if (currentFilter === "sold" && !it.is_sold) return false;
 
+    // 2) kategori-filter (settes nå via filtermodal, ikke chips)
     if (currentCategory && it.category_key !== currentCategory) return false;
 
+    // 3) tekstsøk
     if (!q) return true;
     const text =
       (it.title || "") +
@@ -308,9 +315,32 @@ function applyFilterAndSearch(list, forAdmin = false) {
       (it.location || "");
     return text.toLowerCase().includes(q);
   });
+
+  // 4) Sortering
+  out.sort((a, b) => {
+    const dateA = new Date(a.created_at || a.sold_at || 0);
+    const dateB = new Date(b.created_at || b.sold_at || 0);
+    const priceA = Number(a.price || 0);
+    const priceB = Number(b.price || 0);
+
+    switch (currentSort) {
+      case "date-asc":
+        return dateA - dateB;
+      case "price-desc":
+        return priceB - priceA;
+      case "price-asc":
+        return priceA - priceB;
+      case "date-desc":
+      default:
+        return dateB - dateA;
+    }
+  });
+
+  return out;
 }
 
 function renderAll() {
+  // Ikke vis horisontale kategorichips lenger
   renderCategories();
   renderItemsForMarket();
   renderItemsForAdmin();
@@ -319,6 +349,7 @@ function renderAll() {
 
 function renderItemsForMarket() {
   const cont = $("#items-container");
+  if (!cont) return;
   const filtered = applyFilterAndSearch(items, false);
   if (!filtered.length) {
     cont.innerHTML = '<p style="font-size:13px;color:var(--fg-soft);">Ingen varer.</p>';
@@ -330,6 +361,7 @@ function renderItemsForMarket() {
 
 function renderItemsForAdmin() {
   const cont = $("#admin-items-container");
+  if (!cont) return;
   const filtered = applyFilterAndSearch(items, true);
   if (!filtered.length) {
     cont.innerHTML =
@@ -473,41 +505,12 @@ function openDetailsModal(itemId) {
   showModal("#details-modal");
 }
 
-// Categories
+// Categories – vi bruker ikke lenger baren til filter, så den holdes tom
 function renderCategories() {
   const bar = $("#category-bar");
-  const allCats = Array.from(
-    new Set(
-      items
-        .map((i) => (i.category ? i.category.trim() : ""))
-        .filter((c) => c.length > 0)
-    )
-  );
-  if (!allCats.length) {
+  if (bar) {
     bar.innerHTML = "";
-    return;
   }
-  const chips = [
-    '<button class="category-chip' +
-      (currentCategory === null ? " category-chip-active" : "") +
-      '" data-cat="__ALL__">Alle kategorier</button>',
-  ];
-  for (const c of allCats) {
-    const key = c.toLowerCase();
-    chips.push(
-      `<button class="category-chip${
-        currentCategory === key ? " category-chip-active" : ""
-      }" data-cat="${key}">${escapeHtml(c)}</button>`
-    );
-  }
-  bar.innerHTML = chips.join("");
-  bar.querySelectorAll(".category-chip").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const val = btn.getAttribute("data-cat");
-      currentCategory = val === "__ALL__" ? null : val;
-      renderAll();
-    });
-  });
 }
 
 // Overview
@@ -526,6 +529,7 @@ function renderOverview() {
 // Requests
 function renderRequests() {
   const cont = $("#requests-container");
+  if (!cont) return;
   if (!requests.length) {
     cont.innerHTML =
       '<p style="font-size:13px;color:var(--fg-soft);">Ingen forespørsler enda.</p>';
@@ -594,7 +598,7 @@ function switchView(v) {
   if (v === "requests") loadRequests();
 }
 
-// Filter tabs
+// Filter tabs (Til salgs / Solgt / Alle)
 function setupTabs() {
   $$(".tab-pill").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -605,6 +609,54 @@ function setupTabs() {
       renderAll();
     });
   });
+}
+
+// FILTERMODAL – sortering + kategori
+
+function buildFilterCategories() {
+  const cont = $("#filter-category-container");
+  if (!cont) return;
+
+  const allCats = Array.from(
+    new Set(
+      items
+        .map((i) => (i.category ? i.category.trim() : ""))
+        .filter((c) => c.length > 0)
+    )
+  );
+
+  if (!allCats.length) {
+    cont.innerHTML =
+      '<p style="font-size:12px;color:var(--fg-soft);">Ingen kategorier enda.</p>';
+    return;
+  }
+
+  const chips = [];
+  chips.push(
+    `<button class="filter-cat-pill${
+      currentCategory === null ? " active" : ""
+    }" data-cat="__ALL__">Alle kategorier</button>`
+  );
+
+  for (const c of allCats) {
+    const key = c.toLowerCase();
+    chips.push(
+      `<button class="filter-cat-pill${
+        currentCategory === key ? " active" : ""
+      }" data-cat="${key}">${escapeHtml(c)}</button>`
+    );
+  }
+
+  cont.innerHTML = chips.join("");
+}
+
+function openFilterModal() {
+  const sortSelect = $("#sort-select");
+  if (sortSelect) {
+    sortSelect.value = currentSort;
+  }
+  buildFilterCategories();
+  showModal("#filter-modal");
 }
 
 // Utils
@@ -647,6 +699,41 @@ function initEvents() {
   });
 
   setupTabs();
+
+  // 🔸 Filter-knapp
+  $("#filter-btn")?.addEventListener("click", openFilterModal);
+
+  // 🔸 Filter – kategori-click (delegert)
+  $("#filter-category-container")?.addEventListener("click", (e) => {
+    const btn = e.target.closest(".filter-cat-pill");
+    if (!btn) return;
+    const val = btn.getAttribute("data-cat");
+    currentCategory = val === "__ALL__" ? null : val;
+
+    $$("#filter-category-container .filter-cat-pill").forEach((b) => {
+      b.classList.toggle("active", b === btn);
+    });
+  });
+
+  // 🔸 Filter – Bruk
+  $("#filter-apply")?.addEventListener("click", () => {
+    const sortSelect = $("#sort-select");
+    if (sortSelect) {
+      currentSort = sortSelect.value;
+    }
+    hideModal("#filter-modal");
+    renderAll();
+  });
+
+  // 🔸 Filter – Nullstill
+  $("#filter-reset")?.addEventListener("click", () => {
+    currentSort = "date-desc";
+    currentCategory = null;
+    const sortSelect = $("#sort-select");
+    if (sortSelect) sortSelect.value = "date-desc";
+    buildFilterCategories();
+    renderAll();
+  });
 }
 
 async function initFromDeepLink() {
