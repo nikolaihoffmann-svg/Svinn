@@ -2,969 +2,214 @@
 <html lang="no">
 <head>
   <meta charset="UTF-8" />
-  <title>EkstraVerdi – Annonsedemo</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    :root {
-      /* DARK MODE (default) */
-      --bg: #050816;
-      --bg-soft: #0b1020;
-      --bg-softer: #111827;
-      --fg: #f9fafb;
-      --fg-soft: #9ca3af;
-
-      /* EkstraVerdi-oransje + nøytral */
-      --accent: #f97316;
-      --accent-soft: rgba(249, 115, 22, 0.14);
-
-      --danger: #f97373;
-      --danger-soft: rgba(248, 113, 113, 0.16);
-
-      --border-soft: rgba(148, 163, 184, 0.2);
-
-      --pill-bg: #0f172a;
-      --pill-bg-active: #f9fafb;
-      --pill-fg-active: #020617;
-
-      --shadow-soft: 0 18px 40px rgba(15, 23, 42, 0.7);
-      --radius-lg: 18px;
-      --radius-pill: 999px;
-      --transition-fast: 0.18s ease-out;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      min-height: 100vh;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
-      background: radial-gradient(circle at top, #111827 0, #020617 55%, #000 100%);
-      color: var(--fg);
-      display: flex;
-      justify-content: center;
-      padding: 24px;
-    }
-
-    .app-shell {
-      width: 100%;
-      max-width: 1100px;
-      display: grid;
-      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.6fr);
-      gap: 24px;
-    }
-
-    @media (max-width: 900px) {
-      .app-shell {
-        grid-template-columns: minmax(0, 1fr);
-      }
-    }
-
-    .card {
-      background: linear-gradient(135deg, #020617, #020617) padding-box,
-                  linear-gradient(145deg, rgba(148, 163, 184, 0.7), rgba(249, 115, 22, 0.8)) border-box;
-      border-radius: var(--radius-lg);
-      border: 1px solid transparent;
-      box-shadow: var(--shadow-soft);
-      padding: 18px 18px 16px;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .card::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(circle at top left, rgba(249, 115, 22, 0.12), transparent 60%);
-      opacity: 0.8;
-      pointer-events: none;
-    }
-
-    .card-content {
-      position: relative;
-      z-index: 1;
-    }
-
-    /* HEADER / LOGO */
-    .header {
-      margin-bottom: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-    }
-
-    .logo-lockup {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .logo-mark {
-      width: 32px;
-      height: 32px;
-      border-radius: 11px;
-      background: radial-gradient(circle at 30% 0, #fed7aa 0, #f97316 40%, #111827 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      font-weight: 800;
-      color: #020617;
-      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.9);
-    }
-
-    .logo-text {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .logo-title {
-      font-weight: 800;
-      letter-spacing: 0.03em;
-      text-transform: uppercase;
-      font-size: 15px;
-    }
-
-    .logo-tagline {
-      font-size: 11px;
-      color: var(--fg-soft);
-    }
-
-    .pill {
-      border-radius: var(--radius-pill);
-      border: 1px solid var(--border-soft);
-      background: rgba(15, 23, 42, 0.9);
-      padding: 4px 10px;
-      font-size: 11px;
-      color: var(--fg-soft);
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      white-space: nowrap;
-    }
-
-    .pill-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 999px;
-      background: var(--accent);
-      box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.25);
-    }
-
-    /* FORM */
-    form {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    label {
-      font-size: 12px;
-      color: var(--fg-soft);
-      margin-bottom: 4px;
-      display: block;
-    }
-
-    .input-group {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    input[type="text"],
-    input[type="number"],
-    textarea {
-      width: 100%;
-      border-radius: 10px;
-      background: #020617;
-      border: 1px solid var(--border-soft);
-      padding: 8px 10px;
-      color: var(--fg);
-      font-size: 13px;
-      outline: none;
-      transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
-    }
-
-    input::placeholder,
-    textarea::placeholder {
-      color: #4b5563;
-    }
-
-    input:focus,
-    textarea:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 1px rgba(249, 115, 22, 0.7);
-      background: #020617;
-    }
-
-    textarea {
-      min-height: 80px;
-      resize: vertical;
-    }
-
-    .input-row {
-      display: flex;
-      gap: 10px;
-    }
-
-    .input-row > .input-group {
-      flex: 1;
-    }
-
-    input[type="file"] {
-      font-size: 12px;
-      color: var(--fg-soft);
-    }
-
-    /* Bildepreview i skjema */
-    .image-preview-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 4px;
-    }
-
-    .image-preview-item {
-      width: 64px;
-      height: 64px;
-      border-radius: 10px;
-      overflow: hidden;
-      border: 1px solid var(--border-soft);
-      background: #020617;
-    }
-
-    .image-preview-item img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-
-    .btn-primary {
-      margin-top: 4px;
-      border-radius: 11px;
-      border: none;
-      padding: 8px 12px;
-      background: linear-gradient(135deg, #f97316, #fb923c);
-      color: #111827;
-      font-weight: 600;
-      font-size: 13px;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      box-shadow: 0 14px 30px rgba(248, 113, 22, 0.35);
-      transition: transform 0.12s ease-out, box-shadow 0.12s ease-out, filter 0.12s ease-out;
-    }
-
-    .btn-primary:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 18px 40px rgba(248, 113, 22, 0.45);
-      filter: brightness(1.02);
-    }
-
-    .btn-primary:active {
-      transform: translateY(0);
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.8);
-    }
-
-    .helper-text {
-      font-size: 11px;
-      color: var(--fg-soft);
-    }
-
-    /* ANNONSELISTE */
-    .list-header {
-      margin-bottom: 10px;
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      gap: 8px;
-    }
-
-    .list-title {
-      font-size: 14px;
-      font-weight: 600;
-      letter-spacing: 0.03em;
-      text-transform: uppercase;
-      color: var(--fg-soft);
-    }
-
-    .list-count {
-      font-size: 11px;
-      color: var(--fg-soft);
-    }
-
-    .ad-list {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      max-height: calc(100vh - 80px);
-      overflow-y: auto;
-      padding-right: 4px;
-    }
-
-    .ad-card {
-      border-radius: 14px;
-      display: grid;
-      grid-template-columns: 120px minmax(0, 1fr);
-      gap: 10px;
-      padding: 8px;
-      background: rgba(15, 23, 42, 0.96);
-      border: 1px solid rgba(31, 41, 55, 0.9);
-      cursor: pointer;
-      transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast);
-    }
-
-    .ad-card:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 14px 35px rgba(0, 0, 0, 0.8);
-      border-color: rgba(249, 115, 22, 0.6);
-      background: radial-gradient(circle at top, rgba(249, 115, 22, 0.12), rgba(15, 23, 42, 0.98));
-    }
-
-    @media (max-width: 600px) {
-      .ad-card {
-        grid-template-columns: 100px minmax(0, 1fr);
-      }
-    }
-
-    .ad-thumb-wrapper {
-      border-radius: 12px;
-      overflow: hidden;
-      position: relative;
-      background: #020617;
-      height: 100px;          /* Viktig: gjør bildet "lite og fint" i feeden */
-    }
-
-    .ad-thumb-wrapper img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;      /* Så bildet fyller fint uten å strekkes stygt */
-      display: block;
-    }
-
-    .image-count-badge {
-      position: absolute;
-      bottom: 6px;
-      right: 6px;
-      border-radius: 999px;
-      background: rgba(15, 23, 42, 0.88);
-      padding: 3px 8px;
-      font-size: 10px;
-      color: var(--fg-soft);
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      border: 1px solid rgba(148, 163, 184, 0.7);
-      backdrop-filter: blur(4px);
-    }
-
-    .image-count-badge span {
-      font-size: 11px;
-    }
-
-    .ad-content {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      min-width: 0;
-    }
-
-    .ad-title-row {
-      display: flex;
-      justify-content: space-between;
-      gap: 10px;
-      align-items: center;
-    }
-
-    .ad-title {
-      font-size: 14px;
-      font-weight: 600;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .ad-price {
-      font-size: 14px;
-      font-weight: 700;
-      color: #fbbf24;
-      white-space: nowrap;
-    }
-
-    .ad-description {
-      font-size: 12px;
-      color: var(--fg-soft);
-      max-height: 34px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .ad-meta-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: 2px;
-      gap: 8px;
-    }
-
-    .ad-meta-left {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      font-size: 11px;
-      color: var(--fg-soft);
-    }
-
-    .ad-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 999px;
-      background: #22c55e;
-      box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.18);
-    }
-
-    .ad-tag {
-      border-radius: 999px;
-      padding: 2px 8px;
-      border: 1px solid rgba(55, 65, 81, 0.9);
-      background: rgba(15, 23, 42, 0.95);
-    }
-
-    .ad-time {
-      font-size: 10px;
-      color: #6b7280;
-    }
-
-    /* DETALJVISNING (modal) */
-    .modal-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.7);
-      backdrop-filter: blur(4px);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 16px;
-      z-index: 30;
-    }
-
-    .modal-backdrop.show {
-      display: flex;
-    }
-
-    .modal {
-      max-width: 960px;
-      width: 100%;
-      max-height: 90vh;
-      background: #020617;
-      border-radius: 18px;
-      border: 1px solid rgba(249, 115, 22, 0.7);
-      box-shadow: 0 25px 80px rgba(0, 0, 0, 0.95);
-      display: grid;
-      grid-template-columns: minmax(0, 1.5fr) minmax(0, 1.2fr);
-      overflow: hidden;
-    }
-
-    @media (max-width: 800px) {
-      .modal {
-        grid-template-columns: minmax(0, 1fr);
-        max-height: 95vh;
-      }
-    }
-
-    .modal-left {
-      position: relative;
-      background: #020617;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .modal-main-image {
-      flex: 1;
-      position: relative;
-      min-height: 220px;
-      background: #020617;
-    }
-
-    .modal-main-image img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      background: radial-gradient(circle at top, #111827, #020617 60%, #000);
-    }
-
-    .modal-thumbs {
-      display: flex;
-      gap: 8px;
-      padding: 8px;
-      overflow-x: auto;
-      border-top: 1px solid rgba(31, 41, 55, 0.9);
-      background: #020617;
-    }
-
-    .modal-thumb {
-      width: 64px;
-      height: 64px;
-      border-radius: 10px;
-      overflow: hidden;
-      border: 1px solid rgba(55, 65, 81, 0.9);
-      cursor: pointer;
-      opacity: 0.8;
-      flex-shrink: 0;
-    }
-
-    .modal-thumb.active {
-      border-color: var(--accent);
-      opacity: 1;
-      box-shadow: 0 0 0 1px rgba(249, 115, 22, 0.9);
-    }
-
-    .modal-thumb img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-
-    .modal-right {
-      padding: 14px 16px 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      background: radial-gradient(circle at top right, rgba(249, 115, 22, 0.18), #020617 55%);
-    }
-
-    .modal-header-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 8px;
-    }
-
-    .modal-title {
-      font-size: 16px;
-      font-weight: 700;
-    }
-
-    .modal-price {
-      font-size: 16px;
-      font-weight: 800;
-      color: #fbbf24;
-      white-space: nowrap;
-    }
-
-    .modal-description {
-      font-size: 13px;
-      color: var(--fg-soft);
-      margin-top: 4px;
-      white-space: pre-wrap;
-    }
-
-    .modal-footer {
-      margin-top: auto;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 8px;
-      font-size: 11px;
-      color: #9ca3af;
-    }
-
-    .modal-close-btn {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      border-radius: 999px;
-      border: 1px solid rgba(31, 41, 55, 0.9);
-      background: rgba(15, 23, 42, 0.9);
-      width: 26px;
-      height: 26px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      color: #9ca3af;
-      font-size: 15px;
-      z-index: 2;
-    }
-
-    .modal-close-btn:hover {
-      border-color: rgba(249, 115, 22, 0.7);
-      color: #f97316;
-    }
-
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EkstraVerdi</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <div class="app-shell">
-    <!-- VENSTRE: Ny annonse -->
-    <section class="card">
-      <div class="card-content">
-        <div class="header">
-          <div class="logo-lockup">
-            <div class="logo-mark">E</div>
-            <div class="logo-text">
-              <div class="logo-title">EkstraVerdi</div>
-              <div class="logo-tagline">Ting du ikke trenger, penger du faktisk trenger</div>
-            </div>
-          </div>
-          <div class="pill">
-            <span class="pill-dot"></span>
-            Ny annonse
-          </div>
+    <header class="app-header">
+      <div class="title-block">
+        <div class="logo-row">
+          <h1 id="app-title">EkstraVerdi</h1>
+          <!-- Oransje gris rett etter navnet -->
+          <img src="pig-icon.PNG" alt="" class="brand-pig" />
         </div>
-
-        <form id="adForm">
-          <div class="input-group">
-            <label for="title">Tittel</label>
-            <input id="title" type="text" placeholder="Eks: iPhone 13 128GB, pen stand" required />
-          </div>
-
-          <div class="input-row">
-            <div class="input-group">
-              <label for="price">Pris (kr)</label>
-              <input id="price" type="number" min="0" step="1" placeholder="Eks: 2500" required />
-            </div>
-            <div class="input-group">
-              <label for="category">Kategori (valgfritt)</label>
-              <input id="category" type="text" placeholder="Eks: Elektronikk, Møbler ..." />
-            </div>
-          </div>
-
-          <div class="input-group">
-            <label for="description">Beskrivelse</label>
-            <textarea id="description" placeholder="Skriv litt om tilstand, størrelse, hva som følger med osv."></textarea>
-          </div>
-
-          <div class="input-group">
-            <label for="images">Bilder (du kan velge flere)</label>
-            <input id="images" type="file" accept="image/*" multiple />
-            <p class="helper-text">
-              Velg flere bilder samtidig for samme annonse. Første bilde blir thumbnail i lista – akkurat som på Finn.
-            </p>
-            <div id="imagePreview" class="image-preview-list"></div>
-          </div>
-
-          <button type="submit" class="btn-primary">
-            Publiser annonse
-            <span>➜</span>
-          </button>
-        </form>
+        <p id="app-subtitle">-Gjør det du ikke trenger, om til ekstra penger</p>
       </div>
-    </section>
-
-    <!-- HØYRE: Liste med annonser -->
-    <section class="card">
-      <div class="card-content">
-        <div class="list-header">
-          <div class="list-title">Dine annonser</div>
-          <div id="adCount" class="list-count">0 annonser</div>
-        </div>
-
-        <div id="adList" class="ad-list">
-          <!-- Genereres i JS -->
-        </div>
+      <div class="header-actions">
+        <button id="theme-toggle" class="icon-btn" aria-label="Bytt tema">🌙</button>
+        <button id="login-btn" class="pill-btn pill-small">Logg inn</button>
       </div>
-    </section>
+    </header>
+
+    <main class="app-main">
+      <!-- Admin-nav (skjules for gjester via JS) -->
+      <nav id="admin-nav" class="admin-nav hidden">
+        <button data-view="market" class="nav-pill nav-pill-active">Salgsside</button>
+        <button data-view="list" class="nav-pill">Liste (admin)</button>
+        <button data-view="overview" class="nav-pill">Oversikt</button>
+        <button data-view="requests" class="nav-pill">Forespørsler</button>
+      </nav>
+
+      <!-- Søk -->
+      <section class="search-section" id="search-section">
+        <input
+          id="search-input"
+          type="search"
+          placeholder="Søk etter tittel, kategori, lagerplass…"
+        />
+      </section>
+
+      <!-- Filter-knapp (sortering + kategori) -->
+      <section class="filter-row">
+        <button id="filter-btn" type="button" class="pill-btn pill-small">
+          Filter & sortering
+        </button>
+      </section>
+
+      <!-- Faner (til salgs / solgt / alle) -->
+      <section class="tabs-section">
+        <button class="tab-pill tab-active" data-filter="sale">Til salgs</button>
+        <button class="tab-pill" data-filter="sold">Solgt</button>
+        <button class="tab-pill" data-filter="all">Alle</button>
+      </section>
+
+      <!-- Ulike “views” -->
+      <section id="market-view" class="view active-view">
+        <div id="items-container" class="cards-list"></div>
+      </section>
+
+      <section id="list-view" class="view">
+        <div id="admin-items-container" class="cards-list"></div>
+      </section>
+
+      <section id="overview-view" class="view">
+        <div class="overview-card">
+          <h2>Oversikt</h2>
+          <p><span class="label">Antall varer til salgs:</span> <span id="count-onsale">0</span></p>
+          <p><span class="label">Antall solgte varer:</span> <span id="count-sold">0</span></p>
+          <p><span class="label">Ordrereserve (hvis alt selges):</span> <span id="sum-reserve">0 kr</span></p>
+          <p><span class="label">Totalt tjent på salg:</span> <span id="sum-sold">0 kr</span></p>
+        </div>
+      </section>
+
+      <section id="requests-view" class="view">
+        <h2>Forespørsler</h2>
+        <div id="requests-container" class="cards-list"></div>
+      </section>
+    </main>
+
+    <!-- Flytende +-knapp (kun admin via JS) -->
+    <button id="fab-add" class="fab hidden">+</button>
   </div>
 
-  <!-- Detaljvisning-modal -->
-  <div id="modalBackdrop" class="modal-backdrop">
-    <div class="modal">
-      <div class="modal-left">
-        <button id="modalClose" class="modal-close-btn">×</button>
-        <div class="modal-main-image">
-          <img id="modalMainImg" src="" alt="Hovedbilde" />
-        </div>
-        <div id="modalThumbs" class="modal-thumbs"></div>
+  <!-- Modal: Logg inn -->
+  <div id="login-modal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+      <h2>Logg inn (admin)</h2>
+      <label>
+        E-post
+        <input id="login-email" type="email" autocomplete="email" />
+      </label>
+      <label>
+        Passord
+        <input id="login-password" type="password" autocomplete="current-password" />
+      </label>
+      <div class="modal-actions">
+        <button id="login-cancel" class="pill-btn pill-ghost">Avbryt</button>
+        <button id="login-submit" class="pill-btn">Logg inn</button>
       </div>
-      <div class="modal-right">
-        <div class="modal-header-row">
-          <div>
-            <div id="modalTitle" class="modal-title"></div>
-            <div id="modalCategory" class="helper-text" style="margin-top: 2px;"></div>
-          </div>
-          <div id="modalPrice" class="modal-price"></div>
-        </div>
-        <div id="modalDescription" class="modal-description"></div>
-        <div class="modal-footer">
-          <span id="modalTime"></span>
-          <span>EkstraVerdi • 0% mva 😉</span>
+    </div>
+  </div>
+
+  <!-- Modal: Ny / rediger vare -->
+  <div id="item-modal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content modal-scroll">
+      <h2 id="item-modal-title">Ny ting</h2>
+      <label>
+        Tittel
+        <input id="item-title" type="text" />
+      </label>
+      <label>
+        Pris (kr)
+        <input id="item-price" type="number" inputmode="numeric" />
+      </label>
+      <label>
+        Kategori
+        <input id="item-category" type="text" placeholder="Bil, Verktøy, Elektronikk…" />
+      </label>
+      <label>
+        Lagerplass
+        <input id="item-location" type="text" placeholder="Garasjen, Loftet, Bod…" />
+      </label>
+      <label>
+        Beskrivelse
+        <textarea id="item-description" rows="3"></textarea>
+      </label>
+      <label>
+        Bilder
+        <input id="item-images" type="file" accept="image/*" multiple />
+        <small>Du kan velge flere bilder, eller ta flere rett etter hverandre.</small>
+      </label>
+      <div id="item-image-preview" class="image-preview hidden"></div>
+      <label class="checkbox-row">
+        <input id="item-mark-sold" type="checkbox" />
+        <span>Marker som solgt</span>
+      </label>
+
+      <div class="modal-actions">
+        <button id="item-delete" class="pill-btn pill-danger pill-left hidden">Slett</button>
+        <div class="modal-actions-right">
+          <button id="item-cancel" class="pill-btn pill-ghost">Avbryt</button>
+          <button id="item-save" class="pill-btn">Lagre</button>
         </div>
       </div>
     </div>
   </div>
 
-  <script>
-    // Enkel in-memory "database"
-    const ads = [];
+  <!-- Modal: Detaljer + “send forespørsel” for kunder -->
+  <div id="details-modal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content modal-scroll">
+      <div id="details-content"></div>
+      <hr />
+      <h3>Send forespørsel på varen</h3>
+      <label>
+        Navn
+        <input id="req-name" type="text" />
+      </label>
+      <label>
+        E-post
+        <input id="req-email" type="email" />
+      </label>
+      <label>
+        Telefon
+        <input id="req-phone" type="tel" />
+      </label>
+      <label>
+        Melding
+        <textarea id="req-message" rows="3" placeholder="F.eks. bud, spørsmål osv."></textarea>
+      </label>
+      <div class="modal-actions">
+        <button id="details-close" class="pill-btn pill-ghost">Lukk</button>
+        <button id="req-send" class="pill-btn">Send forespørsel</button>
+      </div>
+    </div>
+  </div>
 
-    const adForm = document.getElementById("adForm");
-    const imageInput = document.getElementById("images");
-    const imagePreview = document.getElementById("imagePreview");
-    const adListEl = document.getElementById("adList");
-    const adCountEl = document.getElementById("adCount");
+  <!-- Modal: Filter & sortering -->
+  <div id="filter-modal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+      <h2>Filter & sortering</h2>
 
-    let currentImageFiles = [];
+      <label>
+        Sorter etter
+        <select id="sort-select">
+          <option value="newest">Nyest først</option>
+          <option value="oldest">Eldst først</option>
+          <option value="price_desc">Dyrest først</option>
+          <option value="price_asc">Billigst først</option>
+        </select>
+      </label>
 
-    // Modal-elementer
-    const modalBackdrop = document.getElementById("modalBackdrop");
-    const modalClose = document.getElementById("modalClose");
-    const modalMainImg = document.getElementById("modalMainImg");
-    const modalThumbs = document.getElementById("modalThumbs");
-    const modalTitle = document.getElementById("modalTitle");
-    const modalCategory = document.getElementById("modalCategory");
-    const modalPrice = document.getElementById("modalPrice");
-    const modalDescription = document.getElementById("modalDescription");
-    const modalTime = document.getElementById("modalTime");
+      <label>
+        Kategori
+      </label>
+      <div id="filter-category-container">
+        <!-- Fylles automatisk med kategorier -->
+      </div>
 
-    /* ---------- Håndtere valgt(e) bilder i skjema ---------- */
-    imageInput.addEventListener("change", () => {
-      const files = Array.from(imageInput.files || []);
-      currentImageFiles = files;
-      imagePreview.innerHTML = "";
+      <div class="modal-actions">
+        <button id="filter-reset" class="pill-btn pill-ghost">Nullstill</button>
+        <button id="filter-apply" class="pill-btn">Bruk</button>
+      </div>
+    </div>
+  </div>
 
-      if (!files.length) return;
-
-      files.forEach((file) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const div = document.createElement("div");
-          div.className = "image-preview-item";
-          const img = document.createElement("img");
-          img.src = e.target.result;
-          div.appendChild(img);
-          imagePreview.appendChild(div);
-        };
-        reader.readAsDataURL(file);
-      });
-    });
-
-    /* ---------- Submit ny annonse ---------- */
-    adForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-
-      const title = document.getElementById("title").value.trim();
-      const price = document.getElementById("price").value.trim();
-      const category = document.getElementById("category").value.trim();
-      const description = document.getElementById("description").value.trim();
-
-      // Konverter valgte filer til data-URLs (for demo lokalt)
-      const imagePromises = currentImageFiles.map(
-        (file) =>
-          new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = (evt) => resolve(evt.target.result);
-            reader.readAsDataURL(file);
-          })
-      );
-
-      const images = await Promise.all(imagePromises);
-
-      const ad = {
-        id: Date.now().toString(),
-        title,
-        price: price ? Number(price) : null,
-        category,
-        description,
-        images,
-        createdAt: new Date()
-      };
-
-      ads.unshift(ad); // Nyeste øverst
-
-      // Resett skjema
-      adForm.reset();
-      currentImageFiles = [];
-      imagePreview.innerHTML = "";
-
-      renderAds();
-    });
-
-    /* ---------- Render liste med annonser ---------- */
-    function renderAds() {
-      adListEl.innerHTML = "";
-
-      if (!ads.length) {
-        adListEl.innerHTML =
-          '<p class="helper-text">Ingen annonser enda. Lag din første på venstre side 👈</p>';
-        adCountEl.textContent = "0 annonser";
-        return;
-      }
-
-      adCountEl.textContent = ads.length === 1 ? "1 annonse" : `${ads.length} annonser`;
-
-      ads.forEach((ad) => {
-        const card = document.createElement("article");
-        card.className = "ad-card";
-
-        const thumbWrapper = document.createElement("div");
-        thumbWrapper.className = "ad-thumb-wrapper";
-
-        if (ad.images && ad.images.length) {
-          const img = document.createElement("img");
-          img.src = ad.images[0]; // Første bilde som thumbnail
-          img.alt = ad.title;
-          thumbWrapper.appendChild(img);
-
-          const badge = document.createElement("div");
-          badge.className = "image-count-badge";
-          badge.innerHTML = `<span>📷</span><span>${ad.images.length}</span>`;
-          thumbWrapper.appendChild(badge);
-        } else {
-          // Placeholder hvis ingen bilder
-          thumbWrapper.style.display = "flex";
-          thumbWrapper.style.alignItems = "center";
-          thumbWrapper.style.justifyContent = "center";
-          thumbWrapper.textContent = "Ingen bilde";
-        }
-
-        const content = document.createElement("div");
-        content.className = "ad-content";
-
-        const titleRow = document.createElement("div");
-        titleRow.className = "ad-title-row";
-
-        const titleEl = document.createElement("h3");
-        titleEl.className = "ad-title";
-        titleEl.textContent = ad.title;
-
-        const priceEl = document.createElement("div");
-        priceEl.className = "ad-price";
-        priceEl.textContent = ad.price != null ? `${ad.price.toLocaleString("nb-NO")} kr` : "Gi bud";
-
-        titleRow.appendChild(titleEl);
-        titleRow.appendChild(priceEl);
-
-        const descEl = document.createElement("p");
-        descEl.className = "ad-description";
-        descEl.textContent = ad.description || "Ingen beskrivelse.";
-
-        const metaRow = document.createElement("div");
-        metaRow.className = "ad-meta-row";
-
-        const metaLeft = document.createElement("div");
-        metaLeft.className = "ad-meta-left";
-
-        const dot = document.createElement("span");
-        dot.className = "ad-dot";
-
-        const cat = document.createElement("span");
-        cat.className = "ad-tag";
-        cat.textContent = ad.category || "Uten kategori";
-
-        metaLeft.appendChild(dot);
-        metaLeft.appendChild(cat);
-
-        const timeEl = document.createElement("span");
-        timeEl.className = "ad-time";
-        timeEl.textContent = formatTimeAgo(ad.createdAt);
-
-        metaRow.appendChild(metaLeft);
-        metaRow.appendChild(timeEl);
-
-        content.appendChild(titleRow);
-        content.appendChild(descEl);
-        content.appendChild(metaRow);
-
-        card.appendChild(thumbWrapper);
-        card.appendChild(content);
-
-        card.addEventListener("click", () => openModal(ad));
-
-        adListEl.appendChild(card);
-      });
-    }
-
-    /* ---------- Modal (detaljvisning) ---------- */
-    function openModal(ad) {
-      modalTitle.textContent = ad.title;
-      modalCategory.textContent = ad.category ? ad.category : "Uten kategori";
-      modalPrice.textContent =
-        ad.price != null ? `${ad.price.toLocaleString("nb-NO")} kr` : "Gi bud";
-      modalDescription.textContent = ad.description || "Ingen beskrivelse.";
-      modalTime.textContent = `Lagt ut ${formatTimeAgo(ad.createdAt)} • ${formatDate(ad.createdAt)}`;
-
-      if (ad.images && ad.images.length) {
-        modalMainImg.src = ad.images[0];
-      } else {
-        modalMainImg.src = "";
-      }
-
-      modalThumbs.innerHTML = "";
-      if (ad.images && ad.images.length) {
-        ad.images.forEach((src, index) => {
-          const t = document.createElement("button");
-          t.type = "button";
-          t.className = "modal-thumb" + (index === 0 ? " active" : "");
-          const img = document.createElement("img");
-          img.src = src;
-          img.alt = `Bilde ${index + 1}`;
-          t.appendChild(img);
-
-          t.addEventListener("click", () => {
-            modalMainImg.src = src;
-            Array.from(modalThumbs.children).forEach((child) =>
-              child.classList.remove("active")
-            );
-            t.classList.add("active");
-          });
-
-          modalThumbs.appendChild(t);
-        });
-      }
-
-      modalBackdrop.classList.add("show");
-    }
-
-    function closeModal() {
-      modalBackdrop.classList.remove("show");
-    }
-
-    modalClose.addEventListener("click", closeModal);
-    modalBackdrop.addEventListener("click", (e) => {
-      if (e.target === modalBackdrop) closeModal();
-    });
-
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") closeModal();
-    });
-
-    /* ---------- Formaterings-hjelp ---------- */
-    function formatTimeAgo(date) {
-      const d = date instanceof Date ? date : new Date(date);
-      const diffMs = Date.now() - d.getTime();
-      const diffMin = Math.floor(diffMs / 60000);
-      const diffH = Math.floor(diffMin / 60);
-      const diffD = Math.floor(diffH / 24);
-
-      if (diffMin < 1) return "akkurat nå";
-      if (diffMin < 60) return `${diffMin} min siden`;
-      if (diffH < 24) return `${diffH} t siden`;
-      if (diffD === 1) return "i går";
-      return `${diffD} dager siden`;
-    }
-
-    function formatDate(date) {
-      const d = date instanceof Date ? date : new Date(date);
-      return d.toLocaleString("nb-NO", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit"
-      });
-    }
-
-    // Initial render
-    renderAds();
-  </script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>
