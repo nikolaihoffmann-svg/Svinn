@@ -22,7 +22,7 @@
     </header>
 
     <main>
-      <!-- SALGSSIDE (standardvisning) -->
+      <!-- SALGSSIDE (kundevisning / standard) -->
       <section id="view-sales">
         <div class="sales-header">
           <input
@@ -45,7 +45,7 @@
         </section>
       </section>
 
-      <!-- LISTEVISNING (ADMIN) -->
+      <!-- LISTEVISNING (admin) -->
       <section id="view-list" class="hidden">
         <section id="filters" class="filters">
           <button class="filter-btn active" data-filter="active">Til salgs</button>
@@ -58,7 +58,7 @@
         </section>
       </section>
 
-      <!-- OVERSIKT (ADMIN) -->
+      <!-- OVERSIKT (admin) -->
       <section id="view-overview" class="hidden">
         <section id="overview-content" class="overview">
           <!-- Fylles i app.js -->
@@ -83,12 +83,12 @@
 
             <label class="field">
               <span>Tittel</span>
-              <input type="text" id="item-title" required placeholder="F.eks. iPhone 13, vinterdekk, verktøy..." />
+              <input type="text" id="item-title" placeholder="F.eks. iPhone 13, vinterdekk, verktøy..." />
             </label>
 
             <label class="field">
               <span>Pris (kr)</span>
-              <input type="number" id="item-price" min="0" step="1" required placeholder="F.eks. 1500" />
+              <input type="number" id="item-price" min="0" step="1" placeholder="F.eks. 1500" />
             </label>
 
             <label class="field">
@@ -155,6 +155,15 @@
           <div class="field">
             <span>Backup</span>
             <button type="button" id="export-btn" class="btn secondary">Eksporter data (JSON)</button>
+          </div>
+
+          <div class="field">
+            <span>Gå til visning nå</span>
+            <div class="settings-row">
+              <button type="button" id="goto-sales" class="btn secondary">Salgsside</button>
+              <button type="button" id="goto-list" class="btn secondary">Liste</button>
+              <button type="button" id="goto-overview" class="btn secondary">Oversikt</button>
+            </div>
           </div>
 
           <div class="form-actions">
