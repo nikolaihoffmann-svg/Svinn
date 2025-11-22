@@ -686,3 +686,10 @@ html.light .modal-content textarea {
     padding-top: 24px;
   }
 }
+/* FIKS: sørg for at bilder i annonser ikke fyller hele skjermen */
+.card img {
+  width: 100%;
+  max-height: 220px;   /* juster om du vil ha høyere/lavere */
+  object-fit: cover;   /* klipper bildet pent i stedet for å strekke det */
+  display: block;
+}
