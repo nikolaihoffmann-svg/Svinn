@@ -71,9 +71,9 @@ body {
   color: var(--text-muted);
 }
 
-/* THEME TOGGLE */
+/* IKONKNAPP (innstillinger, filter) */
 
-.theme-toggle {
+.icon-btn {
   border-radius: 999px;
   border: 1px solid var(--border-subtle);
   padding: 0.35rem 0.6rem;
@@ -82,37 +82,14 @@ body {
   cursor: pointer;
 }
 
-/* MAIN / TABS */
-
-main {
-  padding: 0 0 4rem;
-}
-
-.tabs {
-  display: flex;
-  gap: 0.5rem;
-  padding: 0.75rem 1.25rem 0;
-}
-
-.tab-btn {
-  flex: 1;
-  padding: 0.5rem 0.75rem;
-  border-radius: 999px;
-  border: 1px solid var(--border-subtle);
-  background: var(--card);
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: var(--text-main);
-}
-
-.tab-btn.active {
-  border-color: var(--accent);
-  background: var(--accent);
-  color: var(--accent-text);
-}
+/* GENERELT */
 
 .hidden {
   display: none;
+}
+
+main {
+  padding: 0 0 4rem;
 }
 
 /* FILTERS (ADMIN LISTE) */
@@ -254,7 +231,7 @@ body.dark .badge-active {
   color: #6ee7b7;
 }
 
-/* Card actions */
+/* Card actions (ADMIN) */
 
 .card-actions {
   display: flex;
@@ -310,7 +287,7 @@ body.dark .btn-small-secondary {
   cursor: pointer;
 }
 
-/* PANEL (SKJEMA) */
+/* PANEL (SKJEMA + INNSTILLINGER) */
 
 .panel {
   position: fixed;
@@ -344,7 +321,7 @@ body.dark .panel-inner {
   margin: 0 0 0.75rem;
 }
 
-/* FORM */
+/* FORM FELT */
 
 .field {
   display: flex;
@@ -418,6 +395,21 @@ body.dark .btn.secondary {
   color: #e5e7eb;
 }
 
+/* INNSTILLINGER */
+
+.settings-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.settings-row label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
 /* OVERSIKT */
 
 .overview {
@@ -449,10 +441,13 @@ body.dark .btn.secondary {
 
 .sales-header {
   padding: 0.75rem 1.25rem 0.25rem;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
 }
 
 .search-input {
-  width: 100%;
+  flex: 1;
   border-radius: 999px;
   border: 1px solid var(--border-subtle);
   padding: 0.5rem 0.9rem;
@@ -466,6 +461,10 @@ body.dark .btn.secondary {
   flex-wrap: wrap;
   gap: 0.35rem;
   padding: 0.25rem 1.25rem 0.75rem;
+}
+
+.chip-row.hidden {
+  display: none;
 }
 
 .chip {
@@ -484,8 +483,6 @@ body.dark .btn.secondary {
   border-color: var(--accent);
 }
 
-/* Salgskort kan være samme som card, men uten admin-actions */
-
 /* DETALJVISNING / PRINT */
 
 .detail-view {
@@ -497,8 +494,9 @@ body.detail-open #view-list,
 body.detail-open #view-overview,
 body.detail-open #view-sales,
 body.detail-open .fab,
-body.detail-open .tabs,
-body.detail-open .filters {
+body.detail-open .filters,
+body.detail-open .sales-header,
+body.detail-open .chip-row {
   display: none;
 }
 
@@ -516,7 +514,7 @@ body.detail-open .detail-view {
 
 .detail-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: space_between;
   align-items: baseline;
   gap: 0.75rem;
 }
@@ -584,12 +582,10 @@ body.detail-open .detail-view {
   }
 
   .app-header,
-  .tabs,
   .filters,
   .item-list,
   .fab,
   .panel,
-  .theme-toggle,
   .sales-header,
   .chip-row {
     display: none !important;
