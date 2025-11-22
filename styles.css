@@ -1,47 +1,48 @@
 :root {
-  /* Dark theme (default) */
-  --bg: #050816;
-  --bg-soft: #0b1020;
-  --bg-softer: #111629;
-  --fg: #f9fafb;
-  --fg-soft: #9ca3af;
+  /* Farger – mørkt (standard) */
+  --bg: #07131a;
+  --bg-soft: #0d1c24;
+  --bg-softer: #12232d;
+  --fg: #fdf7ec;
+  --fg-soft: #c9d2dd;
 
-  --accent: #3b82f6;            /* nøytral blå */
-  --accent-soft: rgba(59,130,246,0.14);
+  --accent: #f28c2b; /* oransje – sparegris */
+  --accent-soft: rgba(242, 140, 43, 0.14);
 
-  --danger: #ef4444;
-  --danger-soft: rgba(239,68,68,0.14);
+  --primary: #fdf7ec;
+  --primary-soft: rgba(253, 247, 236, 0.06);
 
-  --border-soft: rgba(148,163,184,0.25);
+  --pill-bg: #0f2029;
+  --pill-bg-active: #fdf7ec;
+  --pill-fg-active: #062018;
 
-  --pill-bg: #111827;
-  --pill-bg-active: #f9fafb;
-  --pill-fg-active: #020617;
+  --danger: #ff4c6a;
+  --danger-soft: rgba(255, 76, 106, 0.16);
 
-  --shadow-soft: 0 18px 40px rgba(0,0,0,0.65);
+  --border-soft: rgba(255, 255, 255, 0.08);
+  --shadow-soft: 0 22px 60px rgba(0, 0, 0, 0.65);
   --radius-lg: 18px;
   --radius-pill: 999px;
   --transition-fast: 0.18s ease-out;
 }
 
-/* Lys modus */
+/* Lys modus (html.light) */
 html.light {
-  --bg: #f3f4f6;
-  --bg-soft: #ffffff;
-  --bg-softer: #e5e7eb;
-  --fg: #111827;
-  --fg-soft: #6b7280;
+  --bg: #f5f1e8;
+  --bg-soft: #fdf7ec;
+  --bg-softer: #f0e6d5;
+  --fg: #082014;
+  --fg-soft: #596268;
 
-  --accent: #2563eb;
-  --accent-soft: rgba(37,99,235,0.12);
+  --primary: #082014;
+  --primary-soft: rgba(8, 32, 20, 0.06);
 
-  --border-soft: rgba(148,163,184,0.45);
+  --pill-bg: #efe1cb;
+  --pill-bg-active: #082014;
+  --pill-fg-active: #fdf7ec;
 
-  --pill-bg: #e5e7eb;
-  --pill-bg-active: #111827;
-  --pill-fg-active: #f9fafb;
-
-  --shadow-soft: 0 18px 40px rgba(15,23,42,0.18);
+  --border-soft: rgba(12, 32, 24, 0.12);
+  --shadow-soft: 0 18px 45px rgba(38, 45, 50, 0.12);
 }
 
 *,
@@ -53,7 +54,12 @@ html.light {
 body {
   margin: 0;
   min-height: 100vh;
-  background: radial-gradient(circle at top, #1f2937 0, var(--bg) 42%, #020617 100%);
+  background: radial-gradient(
+      circle at top left,
+      rgba(242, 140, 43, 0.12),
+      transparent 55%
+    ),
+    var(--bg);
   color: var(--fg);
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
     sans-serif;
@@ -64,7 +70,7 @@ body {
 .app-shell {
   max-width: 900px;
   margin: 0 auto;
-  padding: 16px 14px 86px;
+  padding: 16px 14px 80px;
 }
 
 /* Header */
@@ -74,17 +80,35 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
+  padding: 10px 12px;
+  border-radius: 20px;
+  background: linear-gradient(
+    135deg,
+    var(--bg-soft),
+    rgba(10, 45, 37, 0.96)
+  );
+  box-shadow: var(--shadow-soft);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+html.light .app-header {
+  background: linear-gradient(
+    135deg,
+    var(--bg-soft),
+    rgba(245, 232, 210, 0.98)
+  );
 }
 
 .title-block h1 {
   margin: 0;
   font-size: 24px;
   letter-spacing: 0.02em;
+  color: var(--primary);
 }
 
 .title-block p {
-  margin: 3px 0 0;
+  margin: 4px 0 0;
   font-size: 13px;
   color: var(--fg-soft);
 }
@@ -110,14 +134,18 @@ body {
   font-size: 16px;
   padding: 0;
   cursor: pointer;
-  transition:
-    background var(--transition-fast),
-    transform var(--transition-fast),
-    box-shadow var(--transition-fast);
+  transition: background var(--transition-fast), transform var(--transition-fast),
+    box-shadow var(--transition-fast), border-color var(--transition-fast);
+}
+
+.icon-btn:hover {
+  background: var(--bg-softer);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.3);
 }
 
 .icon-btn:active {
   transform: scale(0.95);
+  box-shadow: none;
 }
 
 .pill-btn {
@@ -130,11 +158,8 @@ body {
   background: var(--pill-bg-active);
   color: var(--pill-fg-active);
   box-shadow: var(--shadow-soft);
-  transition:
-    transform var(--transition-fast),
-    box-shadow var(--transition-fast),
-    background var(--transition-fast),
-    color var(--transition-fast);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast),
+    background var(--transition-fast), color var(--transition-fast);
 }
 
 .pill-btn:active {
@@ -169,7 +194,7 @@ body {
   display: flex;
   gap: 8px;
   overflow-x: auto;
-  margin-bottom: 10px;
+  margin: 10px 0 8px;
 }
 
 .nav-pill {
@@ -204,10 +229,12 @@ body {
   padding: 9px 0;
   font-size: 13px;
   cursor: pointer;
-  transition:
-    background var(--transition-fast),
-    color var(--transition-fast),
-    transform var(--transition-fast);
+  transition: background var(--transition-fast), color var(--transition-fast),
+    transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.tab-pill:hover {
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25);
 }
 
 .tab-active {
@@ -227,13 +254,13 @@ body {
   border-radius: var(--radius-pill);
   border: 1px solid var(--border-soft);
   padding: 9px 14px;
-  background: rgba(15,23,42,0.9);
+  background: rgba(8, 13, 20, 0.9);
   color: var(--fg);
   font-size: 13px;
 }
 
 html.light #search-input {
-  background: #f9fafb;
+  background: #f5ebdb;
 }
 
 /* Category bar */
@@ -241,7 +268,7 @@ html.light #search-input {
 .category-bar {
   display: flex;
   gap: 6px;
-  margin: 4px 0 10px;
+  margin: 6px 0 10px;
   overflow-x: auto;
 }
 
@@ -250,20 +277,19 @@ html.light #search-input {
   padding: 5px 10px;
   font-size: 11px;
   border: 1px solid var(--border-soft);
-  background: rgba(15,23,42,0.85);
+  background: rgba(8, 23, 20, 0.8);
   color: var(--fg-soft);
   white-space: nowrap;
   cursor: pointer;
 }
 
 html.light .category-chip {
-  background: #e5e7eb;
+  background: #f5ebdb;
 }
 
 .category-chip-active {
   background: var(--accent-soft);
   color: var(--accent);
-  border-color: rgba(59,130,246,0.7);
 }
 
 /* Views */
@@ -285,9 +311,12 @@ html.light .category-chip {
 }
 
 .card {
-  border-radius: var(--radius-lg);
-  background:
-    linear-gradient(135deg, rgba(148,163,184,0.14), transparent 55%),
+  border-radius: 20px;
+  background: radial-gradient(
+      circle at top left,
+      rgba(242, 140, 43, 0.08),
+      transparent 50%
+    ),
     var(--bg-soft);
   border: 1px solid var(--border-soft);
   padding: 12px 12px 10px;
@@ -295,9 +324,7 @@ html.light .category-chip {
 }
 
 html.light .card {
-  background:
-    linear-gradient(135deg, rgba(209,213,219,0.4), transparent 55%),
-    var(--bg-soft);
+  background: #fdf3e2;
 }
 
 .card-header {
@@ -310,6 +337,7 @@ html.light .card {
 .card-title {
   margin: 0;
   font-size: 16px;
+  color: var(--primary);
 }
 
 .card-price {
@@ -340,22 +368,22 @@ html.light .card {
 .badge-green {
   background: var(--accent-soft);
   color: var(--accent);
-  border-color: rgba(59,130,246,0.5);
+  border-color: rgba(242, 140, 43, 0.55);
 }
 
 .badge-grey {
-  background: rgba(15,23,42,0.75);
+  background: rgba(10, 24, 20, 0.7);
   color: var(--fg-soft);
 }
 
 html.light .badge-grey {
-  background: #e5e7eb;
+  background: #efe1cb;
 }
 
 .badge-red {
   background: var(--danger-soft);
   color: var(--danger);
-  border-color: rgba(239,68,68,0.55);
+  border-color: rgba(255, 76, 106, 0.55);
 }
 
 .card-actions-row {
@@ -371,13 +399,8 @@ html.light .badge-grey {
   padding: 6px 10px;
   font-size: 11px;
   cursor: pointer;
-  background: #020617;
+  background: var(--pill-bg);
   color: var(--fg-soft);
-}
-
-html.light .card-pill-btn {
-  background: #e5e7eb;
-  color: #374151;
 }
 
 .card-pill-btn.main {
@@ -394,9 +417,9 @@ html.light .card-pill-btn {
 
 .image-thumb {
   margin-top: 6px;
-  border-radius: 12px;
+  border-radius: 14px;
   overflow: hidden;
-  max-height: 210px;
+  max-height: 190px;
 }
 
 .image-thumb img {
@@ -408,11 +431,15 @@ html.light .card-pill-btn {
 /* Overview */
 
 .overview-card {
-  border-radius: var(--radius-lg);
+  border-radius: 20px;
   background: var(--bg-soft);
   border: 1px solid var(--border-soft);
   padding: 14px 14px 12px;
   box-shadow: var(--shadow-soft);
+}
+
+html.light .overview-card {
+  background: #fdf3e2;
 }
 
 .overview-card h2 {
@@ -432,7 +459,7 @@ html.light .card-pill-btn {
 /* Requests */
 
 .request-card {
-  border-radius: var(--radius-lg);
+  border-radius: 18px;
   background: var(--bg-soft);
   border: 1px solid var(--border-soft);
   padding: 10px 12px;
@@ -461,7 +488,7 @@ html.light .card-pill-btn {
 .modal-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(15,23,42,0.7);
+  background: rgba(0, 0, 0, 0.6);
 }
 
 .modal-content {
@@ -470,12 +497,16 @@ html.light .card-pill-btn {
   top: 50%;
   transform: translate(-50%, -50%);
   background: var(--bg-soft);
-  border-radius: 20px;
+  border-radius: 22px;
   border: 1px solid var(--border-soft);
   width: min(460px, 92vw);
   max-height: 80vh;
   padding: 16px 16px 12px;
   box-shadow: var(--shadow-soft);
+}
+
+html.light .modal-content {
+  background: #fdf3e2;
 }
 
 .modal-scroll {
@@ -502,14 +533,14 @@ html.light .card-pill-btn {
   border: 1px solid var(--border-soft);
   padding: 8px 10px;
   font-size: 13px;
-  background: rgba(15,23,42,0.9);
+  background: rgba(7, 16, 22, 0.96);
   color: var(--fg);
 }
 
 html.light .modal-content input,
 html.light .modal-content textarea {
-  background: #f9fafb;
-  color: #111827;
+  background: #f5ebdb;
+  color: #082014;
 }
 
 .modal-content small {
@@ -554,14 +585,14 @@ html.light .modal-content textarea {
   position: fixed;
   right: 18px;
   bottom: 22px;
-  width: 54px;
-  height: 54px;
+  width: 58px;
+  height: 58px;
   border-radius: 999px;
   border: none;
   background: var(--accent);
-  color: #f9fafb;
-  font-size: 26px;
-  box-shadow: 0 24px 45px rgba(15,23,42,0.6);
+  color: #082014;
+  font-size: 30px;
+  box-shadow: 0 24px 50px rgba(242, 140, 43, 0.55);
   cursor: pointer;
   display: flex;
   align-items: center;
