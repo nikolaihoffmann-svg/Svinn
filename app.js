@@ -15,7 +15,7 @@ const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 let currentUser = null;
 let items = [];
 let requests = [];
-let currentFilter = "sale";
+let currentFilter = "sale"; // "sale" | "sold" | "all"
 let currentCategory = null;
 let currentView = "market"; // "market" | "list" | "overview" | "requests"
 let editingItemId = null;
@@ -23,7 +23,7 @@ let currentDetailsItemId = null;
 
 // THEME
 function loadTheme() {
-  const t = localStorage.getItem("svinn_theme") || "dark";
+  const t = localStorage.getItem("svinn_theme") || "light";
   if (t === "light") document.documentElement.classList.add("light");
   else document.documentElement.classList.remove("light");
   updateThemeButton();
@@ -36,7 +36,41 @@ function toggleTheme() {
 function updateThemeButton() {
   const btn = $("#theme-toggle");
   const isLight = document.documentElement.classList.contains("light");
-  btn.textContent = isLight ? "☀️" : "🌙";
+  btn.textContent = isLight ? "🌙" : "☀️";
+}
+
+// HEADER / INNSTILLINGER
+const SETTINGS_KEY = "svinn_header";
+
+function loadHeaderSettings() {
+  const raw = localStorage.getItem(SETTINGS_KEY);
+  if (!raw) return;
+  try {
+    const s = JSON.parse(raw);
+    if (s.title) $("#app-title").textContent = s.title;
+    if (s.subtitle) $("#app-subtitle").textContent = s.subtitle;
+  } catch (e) {
+    console.error("Kunne ikke lese header-innstillinger", e);
+  }
+}
+
+function openSettingsModal() {
+  $("#settings-title").value = $("#app-title").textContent;
+  $("#settings-subtitle").value = $("#app-subtitle").textContent;
+  showModal("#settings-modal");
+}
+
+function saveSettings() {
+  const title = $("#settings-title").value.trim();
+  const subtitle = $("#settings-subtitle").value.trim();
+
+  if (title) $("#app-title").textContent = title;
+  if (subtitle) $("#app-subtitle").textContent = subtitle;
+
+  const obj = { title, subtitle };
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(obj));
+
+  hideModal("#settings-modal");
 }
 
 // AUTH
@@ -48,6 +82,8 @@ async function checkSession() {
 function updateAuthUI() {
   const loggedIn = !!currentUser;
   $("#login-btn").textContent = loggedIn ? "Logg ut" : "Logg inn";
+
+  // Kunde: ser kun salgssiden. Admin får admin-nav + +knapp.
   $("#admin-nav").classList.toggle("hidden", !loggedIn);
   $("#fab-add").classList.toggle("hidden", !loggedIn);
 }
@@ -82,17 +118,10 @@ async function performLogin() {
 
 // MODAL helpers
 function showModal(sel) {
-  const el = $(sel);
-  if (!el) return;
-  el.classList.remove("hidden");
-  el.classList.add("visible");
+  $(sel).classList.add("visible");
 }
-
 function hideModal(sel) {
-  const el = $(sel);
-  if (!el) return;
-  el.classList.remove("visible");
-  el.classList.add("hidden");
+  $(sel).classList.remove("visible");
 }
 
 // DATA – ITEMS
@@ -125,7 +154,6 @@ async function saveItemFromForm() {
 
   let imageDataUrl = null;
 
-  // Hvis vi allerede har en preview (redigering) – bruk den
   const previewImg = $("#item-image-preview img");
   if (previewImg) {
     imageDataUrl = previewImg.src;
@@ -135,7 +163,7 @@ async function saveItemFromForm() {
     title,
     price,
     category,
-    category_key: category.toLowerCase(),
+    category_key: category ? category.toLowerCase() : null,
     location,
     description,
     is_sold: markSold,
@@ -180,7 +208,7 @@ async function deleteCurrentItem() {
 
 function openNewItemModal() {
   editingItemId = null;
-  $("#item-modal-title").textContent = "Ny ting";
+  $("#item-modal-title").textContent = "Ny vare";
   $("#item-title").value = "";
   $("#item-price").value = "";
   $("#item-category").value = "";
@@ -198,7 +226,7 @@ function openEditItemModal(itemId) {
   const it = items.find((i) => i.id === itemId);
   if (!it) return;
   editingItemId = itemId;
-  $("#item-modal-title").textContent = "Rediger ting";
+  $("#item-modal-title").textContent = "Rediger vare";
   $("#item-title").value = it.title || "";
   $("#item-price").value = it.price ?? "";
   $("#item-category").value = it.category || "";
@@ -280,7 +308,7 @@ async function sendRequestForCurrentItem() {
 
 // RENDERING
 
-function applyFilterAndSearch(list, forAdmin = false) {
+function applyFilterAndSearch(list) {
   const q = $("#search-input").value.trim().toLowerCase();
   return list.filter((it) => {
     if (currentFilter === "sale" && it.is_sold) return false;
@@ -310,28 +338,25 @@ function renderAll() {
 
 function renderItemsForMarket() {
   const cont = $("#items-container");
-  const filtered = applyFilterAndSearch(items, false);
+  const filtered = applyFilterAndSearch(items);
   if (!filtered.length) {
-    cont.innerHTML = '<p style="font-size:13px;color:var(--fg-soft);">Ingen varer.</p>';
+    cont.innerHTML =
+      '<p style="font-size:13px;color:var(--fg-soft);">Ingen varer.</p>';
     return;
   }
-  cont.innerHTML = filtered
-    .map((it) => renderItemCard(it, false))
-    .join("");
+  cont.innerHTML = filtered.map((it) => renderItemCard(it, false)).join("");
   attachCardHandlers(cont, false);
 }
 
 function renderItemsForAdmin() {
   const cont = $("#admin-items-container");
-  const filtered = applyFilterAndSearch(items, true);
+  const filtered = applyFilterAndSearch(items);
   if (!filtered.length) {
     cont.innerHTML =
       '<p style="font-size:13px;color:var(--fg-soft);">Ingen varer i listen.</p>';
     return;
   }
-  cont.innerHTML = filtered
-    .map((it) => renderItemCard(it, true))
-    .join("");
+  cont.innerHTML = filtered.map((it) => renderItemCard(it, true)).join("");
   attachCardHandlers(cont, true);
 }
 
@@ -340,10 +365,13 @@ function renderItemCard(it, isAdmin) {
     ? '<span class="badge badge-red">Solgt</span>'
     : '<span class="badge badge-green">Til salgs</span>';
 
-  const priceText = it.price != null ? `${it.price.toLocaleString("no-NO")} kr` : "Gi bud";
+  const priceText =
+    it.price != null ? `${it.price.toLocaleString("no-NO")} kr` : "Gi bud";
 
   const imageHtml = it.image_url
-    ? `<div class="image-thumb"><img src="${it.image_url}" alt="Bilde av ${it.title}" /></div>`
+    ? `<div class="image-thumb"><img src="${it.image_url}" alt="Bilde av ${escapeHtml(
+        it.title || ""
+      )}" /></div>`
     : "";
 
   const dateStr = it.created_at
@@ -433,7 +461,8 @@ function openDetailsModal(itemId) {
   const it = items.find((i) => i.id === itemId);
   if (!it) return;
   currentDetailsItemId = itemId;
-  const priceText = it.price != null ? `${it.price.toLocaleString("no-NO")} kr` : "Gi bud";
+  const priceText =
+    it.price != null ? `${it.price.toLocaleString("no-NO")} kr` : "Gi bud";
   const dateStr = it.created_at
     ? new Date(it.created_at).toLocaleDateString("no-NO")
     : "";
@@ -443,7 +472,9 @@ function openDetailsModal(itemId) {
       : "";
 
   const imageHtml = it.image_url
-    ? `<div class="image-thumb"><img src="${it.image_url}" alt="Bilde av ${it.title}" /></div>`
+    ? `<div class="image-thumb"><img src="${it.image_url}" alt="Bilde av ${escapeHtml(
+        it.title || ""
+      )}" /></div>`
     : "";
 
   $("#details-content").innerHTML = `
@@ -482,9 +513,11 @@ function renderCategories() {
     bar.innerHTML = "";
     return;
   }
-  const chips = ['<button class="category-chip' +
-    (currentCategory === null ? " category-chip-active" : "") +
-    '" data-cat="__ALL__">Alle kategorier</button>'];
+  const chips = [
+    '<button class="category-chip' +
+      (currentCategory === null ? " category-chip-active" : "") +
+      '" data-cat="__ALL__">Alle kategorier</button>',
+  ];
   for (const c of allCats) {
     const key = c.toLowerCase();
     chips.push(
@@ -552,9 +585,7 @@ function shareItemLink(itemId) {
   const link = url.toString();
 
   if (navigator.share) {
-    navigator
-      .share({ title: "SVINN – vare", url: link })
-      .catch(() => {});
+    navigator.share({ title: "Vare til salgs", url: link }).catch(() => {});
   } else {
     navigator.clipboard.writeText(link).catch(() => {});
     alert("Lenke kopiert til utklippstavle:\n" + link);
@@ -574,7 +605,7 @@ $("#item-image")?.addEventListener("change", (e) => {
   reader.readAsDataURL(file);
 });
 
-// View switching
+// View switching (kun admin ser nav-knappene)
 function switchView(v) {
   currentView = v;
   $$("#admin-nav .nav-pill").forEach((btn) => {
@@ -620,6 +651,12 @@ function initEvents() {
   );
   $("#login-submit").addEventListener("click", performLogin);
 
+  $("#settings-btn").addEventListener("click", openSettingsModal);
+  $("#settings-cancel").addEventListener("click", () =>
+    hideModal("#settings-modal")
+  );
+  $("#settings-save").addEventListener("click", saveSettings);
+
   $("#fab-add").addEventListener("click", openNewItemModal);
   $("#item-cancel").addEventListener("click", () =>
     hideModal("#item-modal")
@@ -648,7 +685,6 @@ async function initFromDeepLink() {
   const url = new URL(window.location.href);
   const itemId = url.searchParams.get("item");
   if (itemId) {
-    // vent litt til items er lastet
     const check = setInterval(() => {
       if (items.length) {
         clearInterval(check);
@@ -660,6 +696,7 @@ async function initFromDeepLink() {
 
 async function init() {
   loadTheme();
+  loadHeaderSettings();
   initEvents();
   await checkSession();
   await loadItems();
