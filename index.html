@@ -32,7 +32,7 @@
         <button data-view="requests" class="nav-pill">Forespørsler</button>
       </nav>
 
-      <!-- Søk -->
+      <!-- Søk + filter -->
       <section class="search-section" id="search-section">
         <input
           id="search-input"
@@ -41,19 +41,15 @@
         />
       </section>
 
-      <!-- Filter-knapp (sortering + kategori) -->
-      <section class="filter-row">
-        <button id="filter-btn" type="button" class="pill-btn pill-small">
-          Filter & sortering
-        </button>
-      </section>
-
       <!-- Faner (til salgs / solgt / alle) -->
       <section class="tabs-section">
         <button class="tab-pill tab-active" data-filter="sale">Til salgs</button>
         <button class="tab-pill" data-filter="sold">Solgt</button>
         <button class="tab-pill" data-filter="all">Alle</button>
       </section>
+
+      <!-- Kategori-knapper (genereres dynamisk) -->
+      <section id="category-bar" class="category-bar"></section>
 
       <!-- Ulike “views” -->
       <section id="market-view" class="view active-view">
@@ -131,8 +127,8 @@
       </label>
       <label>
         Bilder
-        <input id="item-images" type="file" accept="image/*" multiple />
-        <small>Du kan velge flere bilder, eller ta flere rett etter hverandre.</small>
+        <input id="item-image" type="file" accept="image/*" multiple />
+        <small>Du kan ta flere bilder direkte med mobilen.</small>
       </label>
       <div id="item-image-preview" class="image-preview hidden"></div>
       <label class="checkbox-row">
@@ -150,7 +146,7 @@
     </div>
   </div>
 
-  <!-- Modal: Detaljer + “send forespørsel” for kunder -->
+  <!-- Modal: Detaljer + forespørsel -->
   <div id="details-modal" class="modal hidden">
     <div class="modal-backdrop"></div>
     <div class="modal-content modal-scroll">
@@ -176,36 +172,6 @@
       <div class="modal-actions">
         <button id="details-close" class="pill-btn pill-ghost">Lukk</button>
         <button id="req-send" class="pill-btn">Send forespørsel</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal: Filter & sortering -->
-  <div id="filter-modal" class="modal hidden">
-    <div class="modal-backdrop"></div>
-    <div class="modal-content">
-      <h2>Filter & sortering</h2>
-
-      <label>
-        Sorter etter
-        <select id="sort-select">
-          <option value="newest">Nyest først</option>
-          <option value="oldest">Eldst først</option>
-          <option value="price_desc">Dyrest først</option>
-          <option value="price_asc">Billigst først</option>
-        </select>
-      </label>
-
-      <label>
-        Kategori
-      </label>
-      <div id="filter-category-container">
-        <!-- Fylles automatisk med kategorier -->
-      </div>
-
-      <div class="modal-actions">
-        <button id="filter-reset" class="pill-btn pill-ghost">Nullstill</button>
-        <button id="filter-apply" class="pill-btn">Bruk</button>
       </div>
     </div>
   </div>
