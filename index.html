@@ -9,19 +9,46 @@
 <body>
   <div class="app">
     <header class="app-header">
-      <h1>Mine salgsting</h1>
-      <p class="subtitle">Enkel oversikt over alt jeg selger</p>
+      <div class="header-top">
+        <div>
+          <h1>Mine salgsting</h1>
+          <p class="subtitle">Enkel oversikt over alt jeg selger</p>
+        </div>
+        <button id="theme-toggle" class="theme-toggle" aria-label="Bytt tema">
+          🌙
+        </button>
+      </div>
     </header>
 
     <main>
-      <section id="filters" class="filters">
-        <button class="filter-btn active" data-filter="active">Til salgs</button>
-        <button class="filter-btn" data-filter="sold">Solgt</button>
-        <button class="filter-btn" data-filter="all">Alle</button>
+      <nav class="tabs">
+        <button class="tab-btn active" data-view="list">Liste</button>
+        <button class="tab-btn" data-view="overview">Oversikt</button>
+      </nav>
+
+      <!-- LISTEVISNING -->
+      <section id="view-list">
+        <section id="filters" class="filters">
+          <button class="filter-btn active" data-filter="active">Til salgs</button>
+          <button class="filter-btn" data-filter="sold">Solgt</button>
+          <button class="filter-btn" data-filter="all">Alle</button>
+        </section>
+
+        <section id="item-list" class="item-list">
+          <!-- Kort genereres i app.js -->
+        </section>
       </section>
 
-      <section id="item-list" class="item-list">
-        <!-- Kort genereres i app.js -->
+      <!-- OVERSIKT -->
+      <section id="view-overview" class="hidden">
+        <section id="overview-content" class="overview">
+          <!-- Fylles i app.js -->
+        </section>
+      </section>
+
+      <!-- DETALJVISNING FOR ENKELTANNONSE / PRINT -->
+      <section id="detail-view" class="detail-view">
+        <!-- Fylles med én annonse når brukt -->
       </section>
 
       <button id="add-item-btn" class="fab" aria-label="Legg til ny ting">+</button>
@@ -47,6 +74,11 @@
             <label class="field">
               <span>Beskrivelse</span>
               <textarea id="item-description" rows="3" placeholder="Kort beskrivelse, tilstand, størrelse osv."></textarea>
+            </label>
+
+            <label class="field">
+              <span>Hvor ligger varen?</span>
+              <input type="text" id="item-location" placeholder="F.eks. garasje, hylle 3, blå kasse..." />
             </label>
 
             <label class="field">
