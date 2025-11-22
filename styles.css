@@ -603,3 +603,62 @@ html.light .modal-content textarea {
     padding-top: 24px;
   }
 }
+/* Filter-knapp under søk */
+
+.filter-row {
+  margin-top: 8px;
+  margin-bottom: 4px;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.filter-row .pill-btn {
+  padding-inline: 14px;
+  font-size: 13px;
+}
+
+/* Select i filtermodalen */
+
+#sort-select {
+  width: 100%;
+  margin-top: 4px;
+  border-radius: 12px;
+  border: 1px solid var(--border-soft);
+  padding: 8px 10px;
+  font-size: 13px;
+  background: rgba(15, 23, 42, 0.95);
+  color: var(--fg);
+}
+
+html.light #sort-select {
+  background: rgba(249, 250, 251, 0.98);
+}
+
+/* Kategoriknapper i filtermodalen */
+
+#filter-category-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.filter-cat-pill {
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-soft);
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  background: rgba(15, 23, 42, 0.9);
+  color: var(--fg-soft);
+}
+
+html.light .filter-cat-pill {
+  background: rgba(243, 244, 246, 0.98);
+}
+
+.filter-cat-pill.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: rgba(249, 115, 22, 0.7);
+}
