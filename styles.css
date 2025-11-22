@@ -274,30 +274,18 @@ html.light #search-input {
   background: rgba(255, 255, 255, 0.92);
 }
 
-/* Category bar */
+/* Filter-knapp under søk */
 
-.category-bar {
+.filter-row {
+  margin-top: 8px;
+  margin-bottom: 4px;
   display: flex;
-  gap: 6px;
-  margin: 6px 0 12px;
-  overflow-x: auto;
+  justify-content: flex-start;
 }
 
-.category-chip {
-  border-radius: var(--radius-pill);
-  padding: 5px 10px;
-  font-size: 11px;
-  border: 1px solid var(--border-soft);
-  background: rgba(15, 23, 42, 0.85);
-  color: var(--fg-soft);
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.category-chip-active {
-  background: var(--accent-soft);
-  color: var(--accent);
-  border-color: rgba(249, 115, 22, 0.6);
+.filter-row .pill-btn {
+  padding-inline: 14px;
+  font-size: 13px;
 }
 
 /* Views */
@@ -310,7 +298,7 @@ html.light #search-input {
   display: block;
 }
 
-/* Cards */
+/* Cards – Finn-aktig layout */
 
 .cards-list {
   display: flex;
@@ -326,6 +314,32 @@ html.light #search-input {
   border: 1px solid var(--border-soft);
   padding: 12px 12px 10px;
   box-shadow: var(--shadow-soft);
+}
+
+/* Liten thumbnail til venstre, tekst til høyre */
+
+.card-main {
+  display: flex;
+  gap: 10px;
+}
+
+.card-main-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.card-main .image-thumb {
+  flex-shrink: 0;
+  width: 92px;
+  height: 92px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.card-main .image-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .card-header {
@@ -409,19 +423,39 @@ html.light #search-input {
   color: var(--danger);
 }
 
-/* Image preview */
+/* Galleri / flere bilder */
 
 .image-thumb {
   margin-top: 6px;
   border-radius: 12px;
   overflow: hidden;
-  max-height: 170px;
+  max-height: 220px;
 }
 
 .image-thumb img {
   width: 100%;
   display: block;
   object-fit: cover;
+}
+
+.image-strip {
+  margin-top: 6px;
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+}
+
+.image-strip img {
+  width: 68px;
+  height: 68px;
+  border-radius: 10px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.image-strip.image-strip-details img {
+  width: 72px;
+  height: 72px;
 }
 
 /* Overview */
@@ -535,88 +569,6 @@ html.light .modal-content textarea {
   color: var(--fg-soft);
 }
 
-.checkbox-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 6px;
-}
-
-.modal-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 10px;
-}
-
-.modal-actions-right {
-  display: flex;
-  gap: 8px;
-}
-
-/* Image preview i modal */
-
-.image-preview {
-  margin-top: 6px;
-}
-
-.image-preview img {
-  max-width: 100%;
-  border-radius: 12px;
-}
-
-/* FAB */
-
-.fab {
-  position: fixed;
-  right: 18px;
-  bottom: 22px;
-  width: 56px;
-  height: 56px;
-  border-radius: 999px;
-  border: none;
-  background: #f97316;
-  color: #020617;
-  font-size: 28px;
-  box-shadow: 0 24px 45px rgba(248, 113, 22, 0.5);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 40;
-}
-
-.fab:active {
-  transform: scale(0.94);
-  box-shadow: none;
-}
-
-/* Utils */
-
-.hidden {
-  display: none !important;
-}
-
-@media (min-width: 800px) {
-  .app-shell {
-    padding-top: 24px;
-  }
-}
-/* Filter-knapp under søk */
-
-.filter-row {
-  margin-top: 8px;
-  margin-bottom: 4px;
-  display: flex;
-  justify-content: flex-start;
-}
-
-.filter-row .pill-btn {
-  padding-inline: 14px;
-  font-size: 13px;
-}
-
 /* Select i filtermodalen */
 
 #sort-select {
@@ -661,4 +613,78 @@ html.light .filter-cat-pill {
   background: var(--accent-soft);
   color: var(--accent);
   border-color: rgba(249, 115, 22, 0.7);
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.modal-actions-right {
+  display: flex;
+  gap: 8px;
+}
+
+/* Image preview i modal */
+
+.image-preview {
+  margin-top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.image-preview img {
+  max-width: 90px;
+  max-height: 90px;
+  border-radius: 12px;
+  object-fit: cover;
+}
+
+/* FAB */
+
+.fab {
+  position: fixed;
+  right: 18px;
+  bottom: 22px;
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  border: none;
+  background: #f97316;
+  color: #020617;
+  font-size: 28px;
+  box-shadow: 0 24px 45px rgba(248, 113, 22, 0.5);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 40;
+}
+
+.fab:active {
+  transform: scale(0.94);
+  box-shadow: none;
+}
+
+/* Utils */
+
+.hidden {
+  display: none !important;
+}
+
+@media (min-width: 800px) {
+  .app-shell {
+    padding-top: 24px;
+  }
 }
