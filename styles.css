@@ -1,43 +1,52 @@
+/* =========
+   FARGER & TEMA
+   ========= */
+
 :root {
-  /* Nøytral mørk default */
-  --bg: #050712;
-  --bg-soft: #0c101c;
-  --bg-softer: #111827;
+  /* mørk base */
+  --bg: #020617;
+  --bg-soft: #020617;
+  --bg-softer: #020617;
   --fg: #f9fafb;
   --fg-soft: #9ca3af;
 
-  /* Brandfarge = sparegris-oransje */
-  --brand: #f28a1a;
+  /* brand (samme som sparegryta) */
+  --brand: #f97316;
+  --brand-soft: rgba(249, 115, 22, 0.14);
 
-  --accent: #f28a1a;
-  --accent-soft: rgba(242, 138, 26, 0.12);
+  /* knapper / kort */
+  --accent: #0ea5e9;
+  --accent-soft: rgba(14, 165, 233, 0.12);
   --danger: #f97373;
-  --danger-soft: rgba(249, 115, 115, 0.14);
+  --danger-soft: rgba(248, 113, 113, 0.14);
 
-  --border-soft: rgba(148, 163, 184, 0.25);
-  --pill-bg: #111827;
+  --border-soft: rgba(148, 163, 184, 0.24);
+
+  --pill-bg: #020617;
   --pill-bg-active: #f9fafb;
   --pill-fg-active: #020617;
-  --shadow-soft: 0 18px 40px rgba(0, 0, 0, 0.55);
+
+  --shadow-soft: 0 18px 40px rgba(0, 0, 0, 0.75);
   --radius-lg: 18px;
   --radius-pill: 999px;
   --transition-fast: 0.18s ease-out;
 }
 
-/* Lys modus – nøytral og ren */
+/* LYST TEMA */
 html.light {
-  --bg: #f4f4f5;
+  --bg: #f3f4f6;
   --bg-soft: #ffffff;
   --bg-softer: #e5e7eb;
-  --fg: #0f172a;
+  --fg: #111827;
   --fg-soft: #6b7280;
 
-  --accent-soft: rgba(242, 138, 26, 0.10);
   --border-soft: rgba(148, 163, 184, 0.35);
+
   --pill-bg: #e5e7eb;
   --pill-bg-active: #111827;
   --pill-fg-active: #f9fafb;
-  --shadow-soft: 0 14px 30px rgba(15, 23, 42, 0.18);
+
+  --shadow-soft: 0 12px 30px rgba(15, 23, 42, 0.18);
 }
 
 *,
@@ -49,53 +58,67 @@ html.light {
 body {
   margin: 0;
   min-height: 100vh;
-  background: radial-gradient(circle at top, #111827 0, var(--bg) 60%, #020617 100%);
+  background: radial-gradient(
+      circle at top,
+      rgba(15, 23, 42, 0.85),
+      var(--bg) 55%
+    );
   color: var(--fg);
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
     sans-serif;
 }
 
-/* Shell */
+/* =========
+   APP-SHELL
+   ========= */
 
 .app-shell {
   max-width: 900px;
   margin: 0 auto;
-  padding: 16px 14px 80px;
+  padding: 16px 14px 86px;
 }
 
-/* Header */
+/* =========
+   HEADER
+   ========= */
 
 .app-header {
+  margin-bottom: 14px;
+}
+
+.header-card {
+  border-radius: 24px;
+  padding: 14px 16px;
+  background: radial-gradient(
+      circle at top left,
+      rgba(15, 23, 42, 0.7),
+      transparent 60%
+    ),
+    rgba(15, 23, 42, 0.96);
+  border: 1px solid rgba(15, 23, 42, 0.9);
+  box-shadow: var(--shadow-soft);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 14px;
-  padding: 14px 14px;
-  border-radius: 22px;
-  background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.7));
-  box-shadow: var(--shadow-soft);
-  border: 1px solid rgba(148, 163, 184, 0.3);
 }
 
-/* Brand-tekst i samme farge som sparegrisen */
-
-#app-title,
-#app-subtitle {
-  color: var(--brand);
+html.light .header-card {
+  background: #ffffff;
 }
 
-.title-block h1#app-title {
+.title-block h1 {
   margin: 0;
-  font-size: 26px;
-  letter-spacing: 0.02em;
-  font-weight: 700;
+  font-size: 24px;
+  letter-spacing: 0.03em;
+  color: var(--brand); /* NAVN I ORANSJE */
 }
 
-.title-block p#app-subtitle {
+.title-block p {
   margin: 4px 0 0;
   font-size: 13px;
   font-weight: 500;
+  color: var(--brand); /* SLAGORD I ORANSJE */
 }
 
 .header-actions {
@@ -104,7 +127,9 @@ body {
   gap: 8px;
 }
 
-/* Buttons */
+/* =========
+   KNAPPER
+   ========= */
 
 .icon-btn {
   width: 34px;
@@ -116,16 +141,11 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: 17px;
   padding: 0;
   cursor: pointer;
   transition: background var(--transition-fast), transform var(--transition-fast),
     box-shadow var(--transition-fast), border-color var(--transition-fast);
-}
-
-.icon-btn:hover {
-  background: var(--bg-softer);
-  border-color: rgba(148, 163, 184, 0.6);
 }
 
 .icon-btn:active {
@@ -152,7 +172,7 @@ body {
 }
 
 .pill-small {
-  padding: 6px 14px;
+  padding: 6px 16px;
   font-size: 12px;
 }
 
@@ -172,13 +192,15 @@ body {
   margin-right: auto;
 }
 
-/* Tabs & nav */
+/* =========
+   ADMIN-NAV
+   ========= */
 
 .admin-nav {
   display: flex;
   gap: 8px;
   overflow-x: auto;
-  margin: 12px 0 10px;
+  margin: 8px 0 10px;
 }
 
 .nav-pill {
@@ -190,13 +212,19 @@ body {
   font-size: 12px;
   white-space: nowrap;
   cursor: pointer;
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition: background var(--transition-fast), color var(--transition-fast),
+    transform var(--transition-fast);
 }
 
 .nav-pill-active {
   background: var(--pill-bg-active);
   color: var(--pill-fg-active);
+  transform: translateY(-1px);
 }
+
+/* =========
+   TABS
+   ========= */
 
 .tabs-section {
   display: flex;
@@ -217,20 +245,18 @@ body {
     transform var(--transition-fast);
 }
 
-.tab-pill:hover {
-  background: var(--bg-softer);
-}
-
 .tab-active {
   background: var(--pill-bg-active);
   color: var(--pill-fg-active);
   transform: translateY(-1px);
 }
 
-/* Search */
+/* =========
+   SØK
+   ========= */
 
 .search-section {
-  margin-top: 6px;
+  margin-top: 4px;
 }
 
 #search-input {
@@ -238,12 +264,18 @@ body {
   border-radius: var(--radius-pill);
   border: 1px solid var(--border-soft);
   padding: 9px 14px;
-  background: rgba(15, 23, 42, 0.9);
+  background: rgba(15, 23, 42, 0.96);
   color: var(--fg);
   font-size: 13px;
 }
 
-/* Category bar */
+html.light #search-input {
+  background: #ffffff;
+}
+
+/* =========
+   KATEGORIER
+   ========= */
 
 .category-bar {
   display: flex;
@@ -254,21 +286,27 @@ body {
 
 .category-chip {
   border-radius: var(--radius-pill);
-  padding: 5px 10px;
+  padding: 5px 11px;
   font-size: 11px;
   border: 1px solid var(--border-soft);
-  background: rgba(15, 23, 42, 0.8);
+  background: rgba(15, 23, 42, 0.9);
   color: var(--fg-soft);
   white-space: nowrap;
   cursor: pointer;
 }
 
-.category-chip-active {
-  background: var(--accent-soft);
-  color: var(--accent);
+html.light .category-chip {
+  background: #e5e7eb;
 }
 
-/* Views */
+.category-chip-active {
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+
+/* =========
+   VISNINGER
+   ========= */
 
 .view {
   display: none;
@@ -278,7 +316,9 @@ body {
   display: block;
 }
 
-/* Cards */
+/* =========
+   KORT / LISTE
+   ========= */
 
 .cards-list {
   display: flex;
@@ -288,10 +328,20 @@ body {
 
 .card {
   border-radius: var(--radius-lg);
-  background: radial-gradient(circle at top left, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.8));
-  border: 1px solid var(--border-soft);
+  background: radial-gradient(
+      circle at top left,
+      rgba(15, 23, 42, 0.9),
+      transparent 60%
+    ),
+    #020617;
+  border: 1px solid rgba(15, 23, 42, 0.95);
   padding: 12px 12px 10px;
   box-shadow: var(--shadow-soft);
+}
+
+html.light .card {
+  background: #fefce8;
+  border-color: rgba(202, 138, 4, 0.15);
 }
 
 .card-header {
@@ -314,7 +364,7 @@ body {
 .card-sub {
   font-size: 12px;
   color: var(--fg-soft);
-  margin: 3px 0;
+  margin: 4px 0;
 }
 
 .badges-row {
@@ -332,37 +382,46 @@ body {
 }
 
 .badge-green {
-  background: var(--accent-soft);
-  color: var(--accent);
-  border-color: rgba(242, 138, 26, 0.5);
+  background: var(--brand-soft);
+  color: var(--brand);
+  border-color: rgba(249, 115, 22, 0.55);
 }
 
 .badge-grey {
-  background: rgba(15, 23, 42, 0.7);
+  background: rgba(15, 23, 42, 0.9);
   color: var(--fg-soft);
+}
+
+html.light .badge-grey {
+  background: #e5e7eb;
 }
 
 .badge-red {
   background: var(--danger-soft);
   color: var(--danger);
-  border-color: rgba(249, 115, 115, 0.5);
+  border-color: rgba(248, 113, 113, 0.6);
 }
 
 .card-actions-row {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-top: 4px;
+  margin-top: 6px;
 }
 
 .card-pill-btn {
   border-radius: var(--radius-pill);
   border: none;
-  padding: 6px 10px;
+  padding: 6px 11px;
   font-size: 11px;
   cursor: pointer;
-  background: #111827;
+  background: #020617;
   color: var(--fg-soft);
+}
+
+html.light .card-pill-btn {
+  background: #111827;
+  color: #e5e7eb;
 }
 
 .card-pill-btn.main {
@@ -375,13 +434,15 @@ body {
   color: var(--danger);
 }
 
-/* Image preview */
+/* =========
+   BILDEPREVIEW
+   ========= */
 
 .image-thumb {
   margin-top: 6px;
   border-radius: 12px;
   overflow: hidden;
-  max-height: 170px;
+  max-height: 190px;
 }
 
 .image-thumb img {
@@ -390,7 +451,9 @@ body {
   object-fit: cover;
 }
 
-/* Overview */
+/* =========
+   OVERSIKT
+   ========= */
 
 .overview-card {
   border-radius: var(--radius-lg);
@@ -414,7 +477,9 @@ body {
   color: var(--fg-soft);
 }
 
-/* Requests */
+/* =========
+   FOrespørsler
+   ========= */
 
 .request-card {
   border-radius: var(--radius-lg);
@@ -430,7 +495,9 @@ body {
   margin-bottom: 4px;
 }
 
-/* Modals */
+/* =========
+   MODALER
+   ========= */
 
 .modal {
   position: fixed;
@@ -446,7 +513,7 @@ body {
 .modal-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.65);
 }
 
 .modal-content {
@@ -461,6 +528,10 @@ body {
   max-height: 80vh;
   padding: 16px 16px 12px;
   box-shadow: var(--shadow-soft);
+}
+
+html.light .modal-content {
+  background: #ffffff;
 }
 
 .modal-scroll {
@@ -487,8 +558,14 @@ body {
   border: 1px solid var(--border-soft);
   padding: 8px 10px;
   font-size: 13px;
-  background: rgba(15, 23, 42, 0.95);
+  background: rgba(15, 23, 42, 0.96);
   color: var(--fg);
+}
+
+html.light .modal-content input,
+html.light .modal-content textarea {
+  background: #f9fafb;
+  color: #111827;
 }
 
 .modal-content small {
@@ -527,20 +604,22 @@ body {
   border-radius: 12px;
 }
 
-/* FAB */
+/* =========
+   FAB
+   ========= */
 
 .fab {
   position: fixed;
   right: 18px;
   bottom: 22px;
-  width: 54px;
-  height: 54px;
+  width: 56px;
+  height: 56px;
   border-radius: 999px;
   border: none;
-  background: #f28a1a;
+  background: #f97316;
   color: #020617;
-  font-size: 26px;
-  box-shadow: 0 24px 45px rgba(0, 0, 0, 0.4);
+  font-size: 28px;
+  box-shadow: 0 24px 45px rgba(248, 113, 22, 0.65);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -553,7 +632,9 @@ body {
   box-shadow: none;
 }
 
-/* Utils */
+/* =========
+   UTILS
+   ========= */
 
 .hidden {
   display: none !important;
