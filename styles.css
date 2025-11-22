@@ -514,7 +514,7 @@ body.detail-open .detail-view {
 
 .detail-header {
   display: flex;
-  justify-content: space_between;
+  justify-content: space-between;
   align-items: baseline;
   gap: 0.75rem;
 }
