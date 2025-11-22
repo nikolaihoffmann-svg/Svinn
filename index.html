@@ -12,7 +12,6 @@
       <div class="title-block">
         <div class="logo-row">
           <h1 id="app-title">EkstraVerdi</h1>
-          <!-- Oransje gris rett etter navnet -->
           <img src="pig-icon.PNG" alt="" class="brand-pig" />
         </div>
         <p id="app-subtitle">-Gjør det du ikke trenger, om til ekstra penger</p>
@@ -32,7 +31,7 @@
         <button data-view="requests" class="nav-pill">Forespørsler</button>
       </nav>
 
-      <!-- Søk + filter -->
+      <!-- Søk -->
       <section class="search-section" id="search-section">
         <input
           id="search-input"
@@ -51,7 +50,7 @@
       <!-- Kategori-knapper (genereres dynamisk) -->
       <section id="category-bar" class="category-bar"></section>
 
-      <!-- Ulike “views” -->
+      <!-- Views -->
       <section id="market-view" class="view active-view">
         <div id="items-container" class="cards-list"></div>
       </section>
@@ -127,10 +126,11 @@
       </label>
       <label>
         Bilder
-        <input id="item-image" type="file" accept="image/*" multiple />
-        <small>Du kan ta flere bilder direkte med mobilen.</small>
+        <input id="item-images" type="file" accept="image/*" multiple />
+        <small>Første bilde blir hovedbildet. Du kan velge flere.</small>
       </label>
-      <div id="item-image-preview" class="image-preview hidden"></div>
+      <div id="item-images-preview" class="image-preview hidden"></div>
+
       <label class="checkbox-row">
         <input id="item-mark-sold" type="checkbox" />
         <span>Marker som solgt</span>
