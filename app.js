@@ -23,8 +23,7 @@ let currentDetailsItemId = null;
 
 // THEME
 function loadTheme() {
-  // Lys som standard
-  const t = localStorage.getItem("svinn_theme") || "light";
+  const t = localStorage.getItem("svinn_theme") || "dark";
   if (t === "light") document.documentElement.classList.add("light");
   else document.documentElement.classList.remove("light");
   updateThemeButton();
@@ -49,29 +48,14 @@ async function checkSession() {
 
 function updateAuthUI() {
   const loggedIn = !!currentUser;
-
-  // Tekst på knapp
   $("#login-btn").textContent = loggedIn ? "Logg ut" : "Logg inn";
-
-  // Admin-ting (bare for innlogget)
   $("#admin-nav").classList.toggle("hidden", !loggedIn);
   $("#fab-add").classList.toggle("hidden", !loggedIn);
 
-  // "Alle"-fanen – kun for innlogget
+  // "Alle"-tab kun for admin
   const allTab = document.querySelector('.tab-pill[data-filter="all"]');
   if (allTab) {
     allTab.classList.toggle("hidden", !loggedIn);
-
-    // Hvis vi logger ut mens "Alle" var aktiv -> hopp til "Til salgs"
-    if (!loggedIn && allTab.classList.contains("tab-active")) {
-      const saleTab = document.querySelector('.tab-pill[data-filter="sale"]');
-      if (saleTab) {
-        allTab.classList.remove("tab-active");
-        saleTab.classList.add("tab-active");
-        currentFilter = "sale";
-        renderAll();
-      }
-    }
   }
 }
 
@@ -246,10 +230,7 @@ function openEditItemModal(itemId) {
 async function toggleSold(itemId, makeSold) {
   const { error } = await supabase
     .from("items")
-    .update({
-      is_sold: makeSold,
-      sold_at: makeSold ? new Date().toISOString() : null,
-    })
+    .update({ is_sold: makeSold, sold_at: makeSold ? new Date().toISOString() : null })
     .eq("id", itemId);
   if (error) {
     alert("Feil ved oppdatering: " + error.message);
@@ -312,6 +293,7 @@ function applyFilterAndSearch(list) {
   return list.filter((it) => {
     if (currentFilter === "sale" && it.is_sold) return false;
     if (currentFilter === "sold" && !it.is_sold) return false;
+    // "all" = ingen filter
 
     if (currentCategory && it.category_key !== currentCategory) return false;
 
@@ -339,8 +321,7 @@ function renderItemsForMarket() {
   const cont = $("#items-container");
   const filtered = applyFilterAndSearch(items);
   if (!filtered.length) {
-    cont.innerHTML =
-      '<p style="font-size:13px;color:var(--fg-soft);">Ingen varer.</p>';
+    cont.innerHTML = '<p style="font-size:13px;color:var(--fg-soft);">Ingen varer.</p>';
     return;
   }
   cont.innerHTML = filtered.map((it) => renderItemCard(it, false)).join("");
@@ -364,13 +345,10 @@ function renderItemCard(it, isAdmin) {
     ? '<span class="badge badge-red">Solgt</span>'
     : '<span class="badge badge-green">Til salgs</span>';
 
-  const priceText =
-    it.price != null ? `${it.price.toLocaleString("no-NO")} kr` : "Gi bud";
+  const priceText = it.price != null ? `${it.price.toLocaleString("no-NO")} kr` : "Gi bud";
 
   const imageHtml = it.image_url
-    ? `<div class="image-thumb"><img src="${it.image_url}" alt="Bilde av ${escapeHtml(
-        it.title || ""
-      )}" /></div>`
+    ? `<div class="image-thumb"><img src="${it.image_url}" alt="Bilde av ${it.title}" /></div>`
     : "";
 
   const dateStr = it.created_at
@@ -449,7 +427,7 @@ function attachCardHandlers(container, isAdmin) {
         editingItemId = id;
         await deleteCurrentItem();
       } else if (isAdmin && action === "toggle-sold") {
-        const it = items.find((i) => i.id === id);
+        const it = items.find((i) => String(i.id) === String(id));
         await toggleSold(id, !it.is_sold);
       }
     });
@@ -457,11 +435,10 @@ function attachCardHandlers(container, isAdmin) {
 }
 
 function openDetailsModal(itemId) {
-  const it = items.find((i) => i.id === itemId);
+  const it = items.find((i) => String(i.id) === String(itemId));
   if (!it) return;
   currentDetailsItemId = itemId;
-  const priceText =
-    it.price != null ? `${it.price.toLocaleString("no-NO")} kr` : "Gi bud";
+  const priceText = it.price != null ? `${it.price.toLocaleString("no-NO")} kr` : "Gi bud";
   const dateStr = it.created_at
     ? new Date(it.created_at).toLocaleDateString("no-NO")
     : "";
@@ -471,9 +448,7 @@ function openDetailsModal(itemId) {
       : "";
 
   const imageHtml = it.image_url
-    ? `<div class="image-thumb"><img src="${it.image_url}" alt="Bilde av ${escapeHtml(
-        it.title || ""
-      )}" /></div>`
+    ? `<div class="image-thumb"><img src="${it.image_url}" alt="Bilde av ${it.title}" /></div>`
     : "";
 
   $("#details-content").innerHTML = `
@@ -491,11 +466,7 @@ function openDetailsModal(itemId) {
           ? '<span class="badge badge-red">Solgt</span>'
           : '<span class="badge badge-green">Til salgs</span>'
       }
-      ${
-        it.category
-          ? `<span class="badge badge-grey">${escapeHtml(it.category)}</span>`
-          : ""
-      }
+      ${it.category ? `<span class="badge badge-grey">${escapeHtml(it.category)}</span>` : ""}
     </div>
     ${imageHtml}
   `;
@@ -516,11 +487,9 @@ function renderCategories() {
     bar.innerHTML = "";
     return;
   }
-  const chips = [
-    '<button class="category-chip' +
-      (currentCategory === null ? " category-chip-active" : "") +
-      '" data-cat="__ALL__">Alle kategorier</button>',
-  ];
+  const chips = ['<button class="category-chip' +
+    (currentCategory === null ? " category-chip-active" : "") +
+    '" data-cat="__ALL__">Alle kategorier</button>'];
   for (const c of allCats) {
     const key = c.toLowerCase();
     chips.push(
@@ -574,9 +543,7 @@ function renderRequests() {
         r.buyer_email ? "· " + escapeHtml(r.buyer_email) : ""
       } ${r.buyer_phone ? "· " + escapeHtml(r.buyer_phone) : ""}
         </div>
-        <div>${
-          r.message ? escapeHtml(r.message) : "<i>Ingen melding</i>"
-        }</div>
+        <div>${r.message ? escapeHtml(r.message) : "<i>Ingen melding</i>"}</div>
       </article>
     `;
     })
@@ -590,7 +557,9 @@ function shareItemLink(itemId) {
   const link = url.toString();
 
   if (navigator.share) {
-    navigator.share({ title: "EkstraVerdi – vare", url: link }).catch(() => {});
+    navigator
+      .share({ title: "EkstraVerdi – vare", url: link })
+      .catch(() => {});
   } else {
     navigator.clipboard.writeText(link).catch(() => {});
     alert("Lenke kopiert til utklippstavle:\n" + link);
@@ -629,8 +598,7 @@ function switchView(v) {
 function setupTabs() {
   $$(".tab-pill").forEach((btn) => {
     btn.addEventListener("click", () => {
-      const filter = btn.getAttribute("data-filter");
-      currentFilter = filter;
+      currentFilter = btn.getAttribute("data-filter");
       $$(".tab-pill").forEach((b) =>
         b.classList.toggle("tab-active", b === btn)
       );
@@ -685,7 +653,6 @@ async function initFromDeepLink() {
   const url = new URL(window.location.href);
   const itemId = url.searchParams.get("item");
   if (itemId) {
-    // vent litt til items er lastet
     const check = setInterval(() => {
       if (items.length) {
         clearInterval(check);
