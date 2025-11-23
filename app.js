@@ -20,22 +20,22 @@ let currentCategory = null;
 let currentView = "market"; // "market" | "list" | "overview" | "requests"
 let editingItemId = null;
 let currentDetailsItemId = null;
-let currentImageDataUrls = []; // brukes i item-formen
 
-// ---------- THEME ----------
+// holder alle valgte bilder (dataURL) når du lager/redigerer en vare
+let currentImageDataUrls = [];
+
+// THEME
 function loadTheme() {
   const t = localStorage.getItem("svinn_theme") || "dark";
   if (t === "light") document.documentElement.classList.add("light");
   else document.documentElement.classList.remove("light");
   updateThemeButton();
 }
-
 function toggleTheme() {
   const isLight = document.documentElement.classList.toggle("light");
   localStorage.setItem("svinn_theme", isLight ? "light" : "dark");
   updateThemeButton();
 }
-
 function updateThemeButton() {
   const btn = $("#theme-toggle");
   if (!btn) return;
@@ -43,13 +43,12 @@ function updateThemeButton() {
   btn.textContent = isLight ? "☀️" : "🌙";
 }
 
-// ---------- AUTH ----------
+// AUTH
 async function checkSession() {
   const { data } = await supabase.auth.getSession();
   currentUser = data.session?.user ?? null;
   updateAuthUI();
 }
-
 function updateAuthUI() {
   const loggedIn = !!currentUser;
   const loginBtn = $("#login-btn");
@@ -60,12 +59,11 @@ function updateAuthUI() {
   if (adminNav) adminNav.classList.toggle("hidden", !loggedIn);
   if (fab) fab.classList.toggle("hidden", !loggedIn);
 
-  // gjester skal alltid stå på salgsside
+  // gjester skal alltid bare se salgssiden
   if (!loggedIn) {
     switchView("market");
   }
 }
-
 async function handleLoginClick() {
   if (currentUser) {
     await supabase.auth.signOut();
@@ -75,7 +73,6 @@ async function handleLoginClick() {
   }
   showModal("#login-modal");
 }
-
 async function performLogin() {
   const email = $("#login-email").value.trim();
   const password = $("#login-password").value;
@@ -96,14 +93,13 @@ async function performLogin() {
   updateAuthUI();
 }
 
-// ---------- MODAL HELPERS ----------
+// MODAL helpers
 function showModal(sel) {
   const el = $(sel);
   if (!el) return;
   el.classList.remove("hidden");
   el.classList.add("visible");
 }
-
 function hideModal(sel) {
   const el = $(sel);
   if (!el) return;
@@ -111,7 +107,7 @@ function hideModal(sel) {
   el.classList.add("hidden");
 }
 
-// ---------- DATA – ITEMS ----------
+// DATA – ITEMS
 async function loadItems() {
   const { data, error } = await supabase
     .from("items")
@@ -125,18 +121,21 @@ async function loadItems() {
   renderAll();
 }
 
-// Gjør om item.image_url til liste med strenger
-function getImageList(it) {
-  const raw = it?.image_url;
-  if (!raw) return [];
-  if (Array.isArray(raw)) return raw;
-  try {
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed)) return parsed;
-  } catch (e) {
-    // ikke JSON, gammel stil med én streng
+// tolker image_url som enten:
+// - ett bilde (gammelt oppsett), eller
+// - en JSON-liste med flere bilder (nytt oppsett)
+function getItemImages(it) {
+  const val = it.image_url;
+  if (!val) return [];
+  if (typeof val === "string" && val.trim().startsWith("[")) {
+    try {
+      const arr = JSON.parse(val);
+      if (Array.isArray(arr)) return arr;
+    } catch {
+      // fall back
+    }
   }
-  return [raw];
+  return [val];
 }
 
 async function saveItemFromForm() {
@@ -153,12 +152,10 @@ async function saveItemFromForm() {
     return;
   }
 
-  let images = currentImageDataUrls.slice();
-
-  // hvis vi redigerer og ikke har valgt nye bilder, behold de gamle
-  if (!images.length && editingItemId) {
-    const existing = items.find((i) => i.id === editingItemId);
-    images = existing ? getImageList(existing) : [];
+  // lagrer alle bildene som JSON-tekst i image_url
+  let image_url = null;
+  if (currentImageDataUrls.length) {
+    image_url = JSON.stringify(currentImageDataUrls);
   }
 
   const payload = {
@@ -171,10 +168,8 @@ async function saveItemFromForm() {
     is_sold: markSold,
   };
 
-  if (images.length) {
-    payload.image_url = JSON.stringify(images);
-  } else {
-    payload.image_url = null;
+  if (image_url !== null) {
+    payload.image_url = image_url;
   }
 
   let error;
@@ -196,7 +191,6 @@ async function saveItemFromForm() {
 
   hideModal("#item-modal");
   editingItemId = null;
-  currentImageDataUrls = [];
   await loadItems();
 }
 
@@ -210,18 +204,12 @@ async function deleteCurrentItem() {
   }
   hideModal("#item-modal");
   editingItemId = null;
-  currentImageDataUrls = [];
   await loadItems();
 }
 
-function resetImagePreview() {
+function resetImageState() {
   currentImageDataUrls = [];
-  const preview = $("#item-images-preview");
-  if (!preview) return;
-  preview.innerHTML = "";
-  preview.classList.add("hidden");
-  const input = $("#item-images");
-  if (input) input.value = "";
+  renderImagePreview();
 }
 
 function openNewItemModal() {
@@ -234,7 +222,8 @@ function openNewItemModal() {
   $("#item-description").value = "";
   $("#item-mark-sold").checked = false;
   $("#item-delete").classList.add("hidden");
-  resetImagePreview();
+  $("#item-images").value = "";
+  resetImageState();
   showModal("#item-modal");
 }
 
@@ -250,22 +239,8 @@ function openEditItemModal(itemId) {
   $("#item-description").value = it.description || "";
   $("#item-mark-sold").checked = !!it.is_sold;
 
-  // bilder
-  const imgs = getImageList(it);
-  currentImageDataUrls = imgs.slice();
-  const preview = $("#item-images-preview");
-  preview.innerHTML = "";
-  if (imgs.length) {
-    imgs.forEach((src) => {
-      const d = document.createElement("div");
-      d.className = "form-image-thumb";
-      d.innerHTML = `<img src="${src}" alt="Bilde" />`;
-      preview.appendChild(d);
-    });
-    preview.classList.remove("hidden");
-  } else {
-    preview.classList.add("hidden");
-  }
+  currentImageDataUrls = getItemImages(it);
+  renderImagePreview();
 
   $("#item-delete").classList.remove("hidden");
   showModal("#item-modal");
@@ -283,7 +258,7 @@ async function toggleSold(itemId, makeSold) {
   await loadItems();
 }
 
-// ---------- REQUESTS ----------
+// REQUESTS
 async function loadRequests() {
   const { data, error } = await supabase
     .from("requests")
@@ -330,7 +305,7 @@ async function sendRequestForCurrentItem() {
   alert("Forespørsel sendt ✔️");
 }
 
-// ---------- RENDERING ----------
+// RENDERING
 
 function applyFilterAndSearch(list) {
   const q = $("#search-input").value.trim().toLowerCase();
@@ -390,6 +365,15 @@ function renderItemCard(it, isAdmin) {
 
   const priceText = it.price != null ? `${it.price.toLocaleString("no-NO")} kr` : "Gi bud";
 
+  const images = getItemImages(it);
+  const imageHtml = images.length
+    ? `
+      <div class="card-media">
+        <img src="${images[0]}" alt="Bilde av ${escapeHtml(it.title || "")}" />
+      </div>
+    `
+    : "";
+
   const dateStr = it.created_at
     ? new Date(it.created_at).toLocaleDateString("no-NO")
     : "";
@@ -401,30 +385,6 @@ function renderItemCard(it, isAdmin) {
   const locBadge = it.location
     ? `<span class="badge badge-grey">${escapeHtml(it.location)}</span>`
     : "";
-
-  const imgs = getImageList(it);
-  let cardImages = "";
-  if (imgs.length) {
-    const main = imgs[0];
-    const thumbs = imgs.slice(1, 4);
-    cardImages = `
-      <div class="card-image-main">
-        <img src="${main}" alt="Bilde av ${escapeHtml(it.title || "")}" />
-      </div>
-      ${
-        thumbs.length
-          ? `<div class="card-image-strip">
-              ${thumbs
-                .map(
-                  (src) =>
-                    `<div class="card-image-thumb"><img src="${src}" alt=""></div>`
-                )
-                .join("")}
-             </div>`
-          : ""
-      }
-    `;
-  }
 
   const adminBtns = isAdmin
     ? `
@@ -472,7 +432,7 @@ function renderItemCard(it, isAdmin) {
         ${catBadge}
         ${locBadge}
       </div>
-      ${cardImages}
+      ${imageHtml}
       ${adminBtns}
     </article>
   `;
@@ -490,7 +450,7 @@ function attachCardHandlers(container, isAdmin) {
         editingItemId = id;
         await deleteCurrentItem();
       } else if (isAdmin && action === "toggle-sold") {
-        const it = items.find((i) => i.id === id);
+        const it = items.find((i) => String(i.id) === String(id));
         await toggleSold(id, !it.is_sold);
       }
     });
@@ -498,11 +458,11 @@ function attachCardHandlers(container, isAdmin) {
 }
 
 function openDetailsModal(itemId) {
-  const it = items.find((i) => i.id === itemId);
+  const it = items.find((i) => String(i.id) === String(itemId));
   if (!it) return;
   currentDetailsItemId = itemId;
 
-  const imgs = getImageList(it);
+  const images = getItemImages(it);
   const priceText = it.price != null ? `${it.price.toLocaleString("no-NO")} kr` : "Gi bud";
   const dateStr = it.created_at
     ? new Date(it.created_at).toLocaleDateString("no-NO")
@@ -513,34 +473,31 @@ function openDetailsModal(itemId) {
       : "";
 
   let galleryHtml = "";
-  if (imgs.length) {
+  if (images.length) {
     galleryHtml = `
-      <div class="details-image-main">
-        <img id="details-main-img" src="${imgs[0]}" alt="Bilde av ${escapeHtml(
-          it.title || ""
-        )}" />
+      <div class="details-gallery">
+        <div class="details-main-image">
+          <img src="${images[0]}" alt="Bilde av ${escapeHtml(it.title || "")}" />
+        </div>
+        ${
+          images.length > 1
+            ? `<div class="details-thumbs-row">
+                 ${images
+                   .map(
+                     (src, idx) => `
+                   <button class="details-thumb-btn" data-src="${src}">
+                     <img src="${src}" alt="Bilde ${idx + 1}" />
+                   </button>`
+                   )
+                   .join("")}
+               </div>`
+            : ""
+        }
       </div>
-      ${
-        imgs.length > 1
-          ? `<div class="details-image-strip">
-              ${imgs
-                .map(
-                  (src, idx) => `
-                <button class="details-thumb-btn${
-                  idx === 0 ? " details-thumb-active" : ""
-                }" data-index="${idx}">
-                  <img src="${src}" alt="">
-                </button>`
-                )
-                .join("")}
-             </div>`
-          : ""
-      }
     `;
   }
 
   $("#details-content").innerHTML = `
-    ${galleryHtml}
     <h2>${escapeHtml(it.title || "")}</h2>
     <p style="margin:4px 0 6px;font-size:15px;"><strong>${priceText}</strong></p>
     <p style="margin:0 0 4px;font-size:13px;">
@@ -557,29 +514,36 @@ function openDetailsModal(itemId) {
       }
       ${it.category ? `<span class="badge badge-grey">${escapeHtml(it.category)}</span>` : ""}
     </div>
+    ${galleryHtml}
   `;
 
-  // thumbnail-klikk: bytt hovedbilde
-  const mainImg = $("#details-main-img");
-  if (mainImg && imgs.length > 1) {
-    $$(".details-thumb-btn").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const idx = Number(btn.getAttribute("data-index"));
-        if (!Number.isNaN(idx) && imgs[idx]) {
-          mainImg.src = imgs[idx];
-        }
-        $$(".details-thumb-btn").forEach((b) =>
-          b.classList.remove("details-thumb-active")
-        );
-        btn.classList.add("details-thumb-active");
-      });
-    });
-  }
-
+  attachDetailsGalleryHandlers();
   showModal("#details-modal");
 }
 
-// ---------- Categories ----------
+function attachDetailsGalleryHandlers() {
+  const mainImg = document.querySelector(
+    "#details-content .details-main-image img"
+  );
+  const thumbBtns = Array.from(
+    document.querySelectorAll("#details-content .details-thumb-btn")
+  );
+  if (!mainImg || !thumbBtns.length) return;
+
+  thumbBtns.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const src = btn.getAttribute("data-src");
+      if (!src) return;
+      mainImg.src = src;
+      thumbBtns.forEach((b) => b.classList.remove("details-thumb-active"));
+      btn.classList.add("details-thumb-active");
+    });
+  });
+
+  thumbBtns[0].classList.add("details-thumb-active");
+}
+
+// Categories
 function renderCategories() {
   const bar = $("#category-bar");
   const allCats = Array.from(
@@ -616,7 +580,7 @@ function renderCategories() {
   });
 }
 
-// ---------- Overview ----------
+// Overview
 function renderOverview() {
   const onsale = items.filter((i) => !i.is_sold);
   const sold = items.filter((i) => i.is_sold);
@@ -629,7 +593,7 @@ function renderOverview() {
   $("#sum-sold").textContent = `${sumSold.toLocaleString("no-NO")} kr`;
 }
 
-// ---------- Requests ----------
+// Requests
 function renderRequests() {
   const cont = $("#requests-container");
   if (!requests.length) {
@@ -658,53 +622,72 @@ function renderRequests() {
     .join("");
 }
 
-// ---------- Share link ----------
+// Share link
 function shareItemLink(itemId) {
   const url = new URL(window.location.href);
   url.searchParams.set("item", itemId);
   const link = url.toString();
 
   if (navigator.share) {
-    navigator.share({ title: "EkstraVerdi – vare", url: link }).catch(() => {});
+    navigator
+      .share({ title: "EkstraVerdi – vare", url: link })
+      .catch(() => {});
   } else {
     navigator.clipboard.writeText(link).catch(() => {});
     alert("Lenke kopiert til utklippstavle:\n" + link);
   }
 }
 
-// ---------- File -> base64 preview ----------
-function setupImageInput() {
-  const input = $("#item-images");
-  if (!input) return;
-
-  input.addEventListener("change", (e) => {
+// Bildeopplasting -> previews
+const fileInput = $("#item-images");
+if (fileInput) {
+  fileInput.addEventListener("change", (e) => {
     const files = Array.from(e.target.files || []);
-    const preview = $("#item-images-preview");
-    preview.innerHTML = "";
-    currentImageDataUrls = [];
-
     if (!files.length) {
-      preview.classList.add("hidden");
+      resetImageState();
       return;
     }
+    currentImageDataUrls = [];
+    let remaining = files.length;
 
-    files.forEach((file, idx) => {
+    files.forEach((file) => {
       const reader = new FileReader();
       reader.onload = () => {
-        const url = reader.result;
-        currentImageDataUrls.push(url);
-        const d = document.createElement("div");
-        d.className = "form-image-thumb";
-        d.innerHTML = `<img src="${url}" alt="Bilde ${idx + 1}" />`;
-        preview.appendChild(d);
-        preview.classList.remove("hidden");
+        currentImageDataUrls.push(reader.result);
+        remaining -= 1;
+        if (remaining === 0) {
+          renderImagePreview();
+        }
       };
       reader.readAsDataURL(file);
     });
   });
 }
 
-// ---------- View switching ----------
+function renderImagePreview() {
+  const wrap = $("#item-image-preview");
+  if (!wrap) return;
+  if (!currentImageDataUrls.length) {
+    wrap.classList.add("hidden");
+    wrap.innerHTML = "";
+    return;
+  }
+  wrap.classList.remove("hidden");
+  wrap.innerHTML = `
+    <div class="preview-grid">
+      ${currentImageDataUrls
+        .map(
+          (src, idx) => `
+        <div class="preview-thumb">
+          <img src="${src}" alt="Bilde ${idx + 1}" />
+        </div>`
+        )
+        .join("")}
+    </div>
+  `;
+}
+
+// View switching
 function switchView(v) {
   currentView = v;
   $$("#admin-nav .nav-pill").forEach((btn) => {
@@ -719,7 +702,7 @@ function switchView(v) {
   if (v === "requests") loadRequests();
 }
 
-// ---------- Filter tabs ----------
+// Filter tabs
 function setupTabs() {
   $$(".tab-pill").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -732,7 +715,7 @@ function setupTabs() {
   });
 }
 
-// ---------- Utils ----------
+// Utils
 function escapeHtml(str) {
   return String(str)
     .replace(/&/g, "&amp;")
@@ -740,7 +723,7 @@ function escapeHtml(str) {
     .replace(/>/g, "&gt;");
 }
 
-// ---------- INIT ----------
+// INIT
 function initEvents() {
   $("#theme-toggle")?.addEventListener("click", toggleTheme);
 
@@ -772,7 +755,6 @@ function initEvents() {
   });
 
   setupTabs();
-  setupImageInput();
 }
 
 async function initFromDeepLink() {
