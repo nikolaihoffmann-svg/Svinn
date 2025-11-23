@@ -21,21 +21,24 @@ let currentView = "market"; // "market" | "list" | "overview" | "requests"
 let editingItemId = null;
 let currentDetailsItemId = null;
 
-// holder alle valgte bilder (dataURL) når du lager/redigerer en vare
+// bilder for nåværende vare (ny/rediger)
 let currentImageDataUrls = [];
 
-// THEME
+// ===== THEME =====
+
 function loadTheme() {
   const t = localStorage.getItem("svinn_theme") || "dark";
   if (t === "light") document.documentElement.classList.add("light");
   else document.documentElement.classList.remove("light");
   updateThemeButton();
 }
+
 function toggleTheme() {
   const isLight = document.documentElement.classList.toggle("light");
   localStorage.setItem("svinn_theme", isLight ? "light" : "dark");
   updateThemeButton();
 }
+
 function updateThemeButton() {
   const btn = $("#theme-toggle");
   if (!btn) return;
@@ -43,12 +46,14 @@ function updateThemeButton() {
   btn.textContent = isLight ? "☀️" : "🌙";
 }
 
-// AUTH
+// ===== AUTH =====
+
 async function checkSession() {
   const { data } = await supabase.auth.getSession();
   currentUser = data.session?.user ?? null;
   updateAuthUI();
 }
+
 function updateAuthUI() {
   const loggedIn = !!currentUser;
   const loginBtn = $("#login-btn");
@@ -59,11 +64,12 @@ function updateAuthUI() {
   if (adminNav) adminNav.classList.toggle("hidden", !loggedIn);
   if (fab) fab.classList.toggle("hidden", !loggedIn);
 
-  // gjester skal alltid bare se salgssiden
+  // gjest = alltid salgsside
   if (!loggedIn) {
     switchView("market");
   }
 }
+
 async function handleLoginClick() {
   if (currentUser) {
     await supabase.auth.signOut();
@@ -73,6 +79,7 @@ async function handleLoginClick() {
   }
   showModal("#login-modal");
 }
+
 async function performLogin() {
   const email = $("#login-email").value.trim();
   const password = $("#login-password").value;
@@ -93,13 +100,15 @@ async function performLogin() {
   updateAuthUI();
 }
 
-// MODAL helpers
+// ===== MODAL helpers =====
+
 function showModal(sel) {
   const el = $(sel);
   if (!el) return;
   el.classList.remove("hidden");
   el.classList.add("visible");
 }
+
 function hideModal(sel) {
   const el = $(sel);
   if (!el) return;
@@ -107,12 +116,14 @@ function hideModal(sel) {
   el.classList.add("hidden");
 }
 
-// DATA – ITEMS
+// ===== DATA – ITEMS =====
+
 async function loadItems() {
   const { data, error } = await supabase
     .from("items")
     .select("*")
     .order("created_at", { ascending: false });
+
   if (error) {
     console.error(error);
     return;
@@ -121,21 +132,16 @@ async function loadItems() {
   renderAll();
 }
 
-// tolker image_url som enten:
-// - ett bilde (gammelt oppsett), eller
-// - en JSON-liste med flere bilder (nytt oppsett)
-function getItemImages(it) {
-  const val = it.image_url;
-  if (!val) return [];
-  if (typeof val === "string" && val.trim().startsWith("[")) {
-    try {
-      const arr = JSON.parse(val);
-      if (Array.isArray(arr)) return arr;
-    } catch {
-      // fall back
-    }
-  }
-  return [val];
+// helper: lagre flere bilder i én tekstkolonne (image_url) som "url1|||url2|||url3"
+function serializeImageUrls(arr) {
+  return (arr || []).join("|||");
+}
+function parseImageUrls(str) {
+  if (!str) return [];
+  return String(str)
+    .split("|||")
+    .map((s) => s.trim())
+    .filter(Boolean);
 }
 
 async function saveItemFromForm() {
@@ -152,12 +158,6 @@ async function saveItemFromForm() {
     return;
   }
 
-  // lagrer alle bildene som JSON-tekst i image_url
-  let image_url = null;
-  if (currentImageDataUrls.length) {
-    image_url = JSON.stringify(currentImageDataUrls);
-  }
-
   const payload = {
     title,
     price,
@@ -168,8 +168,9 @@ async function saveItemFromForm() {
     is_sold: markSold,
   };
 
-  if (image_url !== null) {
-    payload.image_url = image_url;
+  const imagesString = serializeImageUrls(currentImageDataUrls);
+  if (imagesString) {
+    payload.image_url = imagesString;
   }
 
   let error;
@@ -207,9 +208,31 @@ async function deleteCurrentItem() {
   await loadItems();
 }
 
-function resetImageState() {
-  currentImageDataUrls = [];
-  renderImagePreview();
+function renderImagePreview() {
+  const container = $("#item-image-preview");
+  if (!container) return;
+
+  if (!currentImageDataUrls.length) {
+    container.classList.add("hidden");
+    container.innerHTML = "";
+    return;
+  }
+
+  container.classList.remove("hidden");
+  container.innerHTML = `
+    <div class="preview-grid">
+      ${currentImageDataUrls
+        .map(
+          (url, idx) => `
+        <div class="preview-thumb">
+          <img src="${url}" alt="Bilde ${idx + 1}" />
+          ${idx === 0 ? '<span class="preview-badge">Hovedbilde</span>' : ""}
+        </div>
+      `
+        )
+        .join("")}
+    </div>
+  `;
 }
 
 function openNewItemModal() {
@@ -223,13 +246,17 @@ function openNewItemModal() {
   $("#item-mark-sold").checked = false;
   $("#item-delete").classList.add("hidden");
   $("#item-images").value = "";
-  resetImageState();
+
+  currentImageDataUrls = [];
+  renderImagePreview();
+
   showModal("#item-modal");
 }
 
 function openEditItemModal(itemId) {
   const it = items.find((i) => i.id === itemId);
   if (!it) return;
+
   editingItemId = itemId;
   $("#item-modal-title").textContent = "Rediger ting";
   $("#item-title").value = it.title || "";
@@ -239,7 +266,7 @@ function openEditItemModal(itemId) {
   $("#item-description").value = it.description || "";
   $("#item-mark-sold").checked = !!it.is_sold;
 
-  currentImageDataUrls = getItemImages(it);
+  currentImageDataUrls = parseImageUrls(it.image_url);
   renderImagePreview();
 
   $("#item-delete").classList.remove("hidden");
@@ -258,12 +285,14 @@ async function toggleSold(itemId, makeSold) {
   await loadItems();
 }
 
-// REQUESTS
+// ===== REQUESTS =====
+
 async function loadRequests() {
   const { data, error } = await supabase
     .from("requests")
     .select("*, items(title)")
     .order("created_at", { ascending: false });
+
   if (error) {
     console.error(error);
     return;
@@ -305,13 +334,16 @@ async function sendRequestForCurrentItem() {
   alert("Forespørsel sendt ✔️");
 }
 
-// RENDERING
+// ===== RENDERING =====
 
 function applyFilterAndSearch(list) {
   const q = $("#search-input").value.trim().toLowerCase();
   return list.filter((it) => {
     if (currentFilter === "sale" && it.is_sold) return false;
     if (currentFilter === "sold" && !it.is_sold) return false;
+    if (currentFilter === "all") {
+      // ingen filter på solgt/til salgs
+    }
 
     if (currentCategory && it.category_key !== currentCategory) return false;
 
@@ -337,7 +369,7 @@ function renderAll() {
 
 function renderItemsForMarket() {
   const cont = $("#items-container");
-  const filtered = applyFilterAndSearch(items);
+  const filtered = applyFilterAndSearch(items, false);
   if (!filtered.length) {
     cont.innerHTML = '<p style="font-size:13px;color:var(--fg-soft);">Ingen varer.</p>';
     return;
@@ -348,7 +380,7 @@ function renderItemsForMarket() {
 
 function renderItemsForAdmin() {
   const cont = $("#admin-items-container");
-  const filtered = applyFilterAndSearch(items);
+  const filtered = applyFilterAndSearch(items, true);
   if (!filtered.length) {
     cont.innerHTML =
       '<p style="font-size:13px;color:var(--fg-soft);">Ingen varer i listen.</p>';
@@ -365,13 +397,12 @@ function renderItemCard(it, isAdmin) {
 
   const priceText = it.price != null ? `${it.price.toLocaleString("no-NO")} kr` : "Gi bud";
 
-  const images = getItemImages(it);
-  const imageHtml = images.length
-    ? `
-      <div class="card-media">
-        <img src="${images[0]}" alt="Bilde av ${escapeHtml(it.title || "")}" />
-      </div>
-    `
+  const images = parseImageUrls(it.image_url);
+  const firstImage = images[0];
+  const imageHtml = firstImage
+    ? `<div class="image-thumb"><img src="${firstImage}" alt="Bilde av ${escapeHtml(
+        it.title || ""
+      )}" /></div>`
     : "";
 
   const dateStr = it.created_at
@@ -450,7 +481,7 @@ function attachCardHandlers(container, isAdmin) {
         editingItemId = id;
         await deleteCurrentItem();
       } else if (isAdmin && action === "toggle-sold") {
-        const it = items.find((i) => String(i.id) === String(id));
+        const it = items.find((i) => i.id === id);
         await toggleSold(id, !it.is_sold);
       }
     });
@@ -458,324 +489,5 @@ function attachCardHandlers(container, isAdmin) {
 }
 
 function openDetailsModal(itemId) {
-  const it = items.find((i) => String(i.id) === String(itemId));
-  if (!it) return;
-  currentDetailsItemId = itemId;
-
-  const images = getItemImages(it);
-  const priceText = it.price != null ? `${it.price.toLocaleString("no-NO")} kr` : "Gi bud";
-  const dateStr = it.created_at
-    ? new Date(it.created_at).toLocaleDateString("no-NO")
-    : "";
-  const soldStr =
-    it.is_sold && it.sold_at
-      ? "Solgt: " + new Date(it.sold_at).toLocaleDateString("no-NO")
-      : "";
-
-  let galleryHtml = "";
-  if (images.length) {
-    galleryHtml = `
-      <div class="details-gallery">
-        <div class="details-main-image">
-          <img src="${images[0]}" alt="Bilde av ${escapeHtml(it.title || "")}" />
-        </div>
-        ${
-          images.length > 1
-            ? `<div class="details-thumbs-row">
-                 ${images
-                   .map(
-                     (src, idx) => `
-                   <button class="details-thumb-btn" data-src="${src}">
-                     <img src="${src}" alt="Bilde ${idx + 1}" />
-                   </button>`
-                   )
-                   .join("")}
-               </div>`
-            : ""
-        }
-      </div>
-    `;
-  }
-
-  $("#details-content").innerHTML = `
-    <h2>${escapeHtml(it.title || "")}</h2>
-    <p style="margin:4px 0 6px;font-size:15px;"><strong>${priceText}</strong></p>
-    <p style="margin:0 0 4px;font-size:13px;">
-      ${it.description ? escapeHtml(it.description) + "<br>" : ""}
-      ${dateStr ? "Lagt ut: " + dateStr + "<br>" : ""}
-      ${soldStr ? soldStr + "<br>" : ""}
-      ${it.location ? "Lagerplass: " + escapeHtml(it.location) : ""}
-    </p>
-    <div class="badges-row">
-      ${
-        it.is_sold
-          ? '<span class="badge badge-red">Solgt</span>'
-          : '<span class="badge badge-green">Til salgs</span>'
-      }
-      ${it.category ? `<span class="badge badge-grey">${escapeHtml(it.category)}</span>` : ""}
-    </div>
-    ${galleryHtml}
-  `;
-
-  attachDetailsGalleryHandlers();
-  showModal("#details-modal");
-}
-
-function attachDetailsGalleryHandlers() {
-  const mainImg = document.querySelector(
-    "#details-content .details-main-image img"
-  );
-  const thumbBtns = Array.from(
-    document.querySelectorAll("#details-content .details-thumb-btn")
-  );
-  if (!mainImg || !thumbBtns.length) return;
-
-  thumbBtns.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const src = btn.getAttribute("data-src");
-      if (!src) return;
-      mainImg.src = src;
-      thumbBtns.forEach((b) => b.classList.remove("details-thumb-active"));
-      btn.classList.add("details-thumb-active");
-    });
-  });
-
-  thumbBtns[0].classList.add("details-thumb-active");
-}
-
-// Categories
-function renderCategories() {
-  const bar = $("#category-bar");
-  const allCats = Array.from(
-    new Set(
-      items
-        .map((i) => (i.category ? i.category.trim() : ""))
-        .filter((c) => c.length > 0)
-    )
-  );
-  if (!allCats.length) {
-    bar.innerHTML = "";
-    return;
-  }
-  const chips = [
-    '<button class="category-chip' +
-      (currentCategory === null ? " category-chip-active" : "") +
-      '" data-cat="__ALL__">Alle kategorier</button>',
-  ];
-  for (const c of allCats) {
-    const key = c.toLowerCase();
-    chips.push(
-      `<button class="category-chip${
-        currentCategory === key ? " category-chip-active" : ""
-      }" data-cat="${key}">${escapeHtml(c)}</button>`
-    );
-  }
-  bar.innerHTML = chips.join("");
-  bar.querySelectorAll(".category-chip").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const val = btn.getAttribute("data-cat");
-      currentCategory = val === "__ALL__" ? null : val;
-      renderAll();
-    });
-  });
-}
-
-// Overview
-function renderOverview() {
-  const onsale = items.filter((i) => !i.is_sold);
-  const sold = items.filter((i) => i.is_sold);
-  const sumReserve = onsale.reduce((sum, i) => sum + (i.price || 0), 0);
-  const sumSold = sold.reduce((sum, i) => sum + (i.price || 0), 0);
-
-  $("#count-onsale").textContent = onsale.length;
-  $("#count-sold").textContent = sold.length;
-  $("#sum-reserve").textContent = `${sumReserve.toLocaleString("no-NO")} kr`;
-  $("#sum-sold").textContent = `${sumSold.toLocaleString("no-NO")} kr`;
-}
-
-// Requests
-function renderRequests() {
-  const cont = $("#requests-container");
-  if (!requests.length) {
-    cont.innerHTML =
-      '<p style="font-size:13px;color:var(--fg-soft);">Ingen forespørsler enda.</p>';
-    return;
-  }
-  cont.innerHTML = requests
-    .map((r) => {
-      const dateStr = r.created_at
-        ? new Date(r.created_at).toLocaleString("no-NO")
-        : "";
-      const title = r.items?.title || "Ukjent vare";
-      return `
-      <article class="request-card">
-        <div class="request-meta">
-          ${escapeHtml(title)} · ${dateStr}<br>
-          ${r.buyer_name ? escapeHtml(r.buyer_name) : ""} ${
-        r.buyer_email ? "· " + escapeHtml(r.buyer_email) : ""
-      } ${r.buyer_phone ? "· " + escapeHtml(r.buyer_phone) : ""}
-        </div>
-        <div>${r.message ? escapeHtml(r.message) : "<i>Ingen melding</i>"}</div>
-      </article>
-    `;
-    })
-    .join("");
-}
-
-// Share link
-function shareItemLink(itemId) {
-  const url = new URL(window.location.href);
-  url.searchParams.set("item", itemId);
-  const link = url.toString();
-
-  if (navigator.share) {
-    navigator
-      .share({ title: "EkstraVerdi – vare", url: link })
-      .catch(() => {});
-  } else {
-    navigator.clipboard.writeText(link).catch(() => {});
-    alert("Lenke kopiert til utklippstavle:\n" + link);
-  }
-}
-
-// Bildeopplasting -> previews
-const fileInput = $("#item-images");
-if (fileInput) {
-  fileInput.addEventListener("change", (e) => {
-    const files = Array.from(e.target.files || []);
-    if (!files.length) {
-      resetImageState();
-      return;
-    }
-    currentImageDataUrls = [];
-    let remaining = files.length;
-
-    files.forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        currentImageDataUrls.push(reader.result);
-        remaining -= 1;
-        if (remaining === 0) {
-          renderImagePreview();
-        }
-      };
-      reader.readAsDataURL(file);
-    });
-  });
-}
-
-function renderImagePreview() {
-  const wrap = $("#item-image-preview");
-  if (!wrap) return;
-  if (!currentImageDataUrls.length) {
-    wrap.classList.add("hidden");
-    wrap.innerHTML = "";
-    return;
-  }
-  wrap.classList.remove("hidden");
-  wrap.innerHTML = `
-    <div class="preview-grid">
-      ${currentImageDataUrls
-        .map(
-          (src, idx) => `
-        <div class="preview-thumb">
-          <img src="${src}" alt="Bilde ${idx + 1}" />
-        </div>`
-        )
-        .join("")}
-    </div>
-  `;
-}
-
-// View switching
-function switchView(v) {
-  currentView = v;
-  $$("#admin-nav .nav-pill").forEach((btn) => {
-    btn.classList.toggle(
-      "nav-pill-active",
-      btn.getAttribute("data-view") === v
-    );
-  });
-  ["market", "list", "overview", "requests"].forEach((id) => {
-    $("#" + id + "-view").classList.toggle("active-view", id === v);
-  });
-  if (v === "requests") loadRequests();
-}
-
-// Filter tabs
-function setupTabs() {
-  $$(".tab-pill").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      currentFilter = btn.getAttribute("data-filter");
-      $$(".tab-pill").forEach((b) =>
-        b.classList.toggle("tab-active", b === btn)
-      );
-      renderAll();
-    });
-  });
-}
-
-// Utils
-function escapeHtml(str) {
-  return String(str)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-}
-
-// INIT
-function initEvents() {
-  $("#theme-toggle")?.addEventListener("click", toggleTheme);
-
-  $("#login-btn")?.addEventListener("click", handleLoginClick);
-  $("#login-cancel")?.addEventListener("click", () =>
-    hideModal("#login-modal")
-  );
-  $("#login-submit")?.addEventListener("click", performLogin);
-
-  $("#fab-add")?.addEventListener("click", openNewItemModal);
-  $("#item-cancel")?.addEventListener("click", () =>
-    hideModal("#item-modal")
-  );
-  $("#item-save")?.addEventListener("click", saveItemFromForm);
-  $("#item-delete")?.addEventListener("click", deleteCurrentItem);
-
-  $("#details-close")?.addEventListener("click", () =>
-    hideModal("#details-modal")
-  );
-  $("#req-send")?.addEventListener("click", sendRequestForCurrentItem);
-
-  $("#search-input")?.addEventListener("input", () => renderAll());
-
-  $$("#admin-nav .nav-pill").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const v = btn.getAttribute("data-view");
-      switchView(v);
-    });
-  });
-
-  setupTabs();
-}
-
-async function initFromDeepLink() {
-  const url = new URL(window.location.href);
-  const itemId = url.searchParams.get("item");
-  if (itemId) {
-    const check = setInterval(() => {
-      if (items.length) {
-        clearInterval(check);
-        openDetailsModal(itemId);
-      }
-    }, 300);
-  }
-}
-
-async function init() {
-  loadTheme();
-  initEvents();
-  await checkSession();
-  await loadItems();
-  await initFromDeepLink();
-}
-
-init();
+  const it = items.find((i) => i.id === itemId);
+  if
