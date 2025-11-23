@@ -6,7 +6,7 @@
   --fg: #f9fafb;
   --fg-soft: #9ca3af;
 
-  /* EkstraVerdi-oransje + nøytral */
+  /* EkstraVerdi-oransje */
   --accent: #f97316;
   --accent-soft: rgba(249, 115, 22, 0.14);
 
@@ -221,7 +221,10 @@ body {
   font-size: 12px;
   white-space: nowrap;
   cursor: pointer;
-  transition: background var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast),
+    transform var(--transition-fast);
 }
 
 .nav-pill-active {
@@ -245,7 +248,10 @@ body {
   padding: 9px 0;
   font-size: 13px;
   cursor: pointer;
-  transition: background var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast),
+    transform var(--transition-fast);
 }
 
 .tab-active {
@@ -382,24 +388,6 @@ html.light #search-input {
   border-color: rgba(248, 113, 113, 0.7);
 }
 
-/* Hovedbilde i kort – fast høyde */
-
-.card-media {
-  margin-top: 6px;
-  border-radius: 14px;
-  overflow: hidden;
-  max-height: 220px;
-}
-
-.card-media img {
-  width: 100%;
-  height: 220px;
-  object-fit: cover;
-  display: block;
-}
-
-/* Card actions */
-
 .card-actions-row {
   display: flex;
   flex-wrap: wrap;
@@ -427,29 +415,21 @@ html.light #search-input {
   color: var(--danger);
 }
 
-/* Image preview i skjema */
+/* Hovedbilde på kortet – fast høyde, finn.no-style */
 
-.image-preview {
-  margin-top: 6px;
-}
-
-.preview-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.preview-thumb {
-  width: 72px;
-  height: 72px;
-  border-radius: 12px;
+.image-thumb {
+  margin-top: 8px;
+  border-radius: 16px;
   overflow: hidden;
+  background: #020617;
+  height: 220px;
 }
 
-.preview-thumb img {
+.image-thumb img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 /* Overview */
@@ -490,57 +470,6 @@ html.light #search-input {
   font-size: 11px;
   color: var(--fg-soft);
   margin-bottom: 4px;
-}
-
-/* DETAILS-GALLERI */
-
-.details-gallery {
-  margin-top: 10px;
-}
-
-.details-main-image {
-  border-radius: 14px;
-  overflow: hidden;
-  max-height: 320px;
-  margin-bottom: 6px;
-}
-
-.details-main-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  display: block;
-  background: #000;
-}
-
-.details-thumbs-row {
-  display: flex;
-  gap: 6px;
-  overflow-x: auto;
-  padding-bottom: 2px;
-}
-
-.details-thumb-btn {
-  border: none;
-  padding: 0;
-  background: transparent;
-  flex: 0 0 70px;
-  height: 70px;
-  border-radius: 10px;
-  overflow: hidden;
-  opacity: 0.7;
-}
-
-.details-thumb-btn img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.details-thumb-active {
-  opacity: 1;
-  box-shadow: 0 0 0 2px var(--accent);
 }
 
 /* Modals */
@@ -632,6 +561,98 @@ html.light .modal-content textarea {
 .modal-actions-right {
   display: flex;
   gap: 8px;
+}
+
+/* Image preview i modal (flere bilder) */
+
+.image-preview {
+  margin-top: 6px;
+}
+
+.preview-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.preview-thumb {
+  position: relative;
+  width: 70px;
+  height: 70px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #020617;
+}
+
+.preview-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.preview-badge {
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  padding: 2px 5px;
+  font-size: 9px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.9);
+  color: var(--fg-soft);
+}
+
+/* Galleri i detaljer-modal */
+
+.details-gallery {
+  margin-top: 4px;
+}
+
+.details-main-image {
+  border-radius: 16px;
+  overflow: hidden;
+  background: #020617;
+  max-height: 260px;
+}
+
+.details-main-image img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+}
+
+.details-thumbs {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  overflow-x: auto;
+}
+
+.details-thumb {
+  border: none;
+  padding: 0;
+  border-radius: 10px;
+  overflow: hidden;
+  width: 60px;
+  height: 60px;
+  flex: 0 0 auto;
+  opacity: 0.65;
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.details-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.details-thumb.active {
+  opacity: 1;
+  border-color: var(--accent);
 }
 
 /* FAB */
