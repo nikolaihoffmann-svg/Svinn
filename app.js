@@ -7,7 +7,7 @@ const SUPABASE_ANON_KEY =
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// DOM helpers
+// Små DOM-helpers
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
@@ -15,17 +15,16 @@ const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 let currentUser = null;
 let items = [];
 let requests = [];
-let currentFilter = "sale";
+let currentFilter = "sale"; // sale | sold | all
 let currentCategory = null;
-let currentView = "market"; // "market" | "list" | "overview" | "requests"
+let currentView = "market"; // market | list | overview | requests
 let editingItemId = null;
 let currentDetailsItemId = null;
 
-// bilder for nåværende vare (ny/rediger)
+// bilder som er valgt i "Ny/rediger" (dataURLs)
 let currentImageDataUrls = [];
 
-// ===== THEME =====
-
+// THEME
 function loadTheme() {
   const t = localStorage.getItem("svinn_theme") || "dark";
   if (t === "light") document.documentElement.classList.add("light");
@@ -46,8 +45,7 @@ function updateThemeButton() {
   btn.textContent = isLight ? "☀️" : "🌙";
 }
 
-// ===== AUTH =====
-
+// AUTH
 async function checkSession() {
   const { data } = await supabase.auth.getSession();
   currentUser = data.session?.user ?? null;
@@ -64,10 +62,8 @@ function updateAuthUI() {
   if (adminNav) adminNav.classList.toggle("hidden", !loggedIn);
   if (fab) fab.classList.toggle("hidden", !loggedIn);
 
-  // gjest = alltid salgsside
-  if (!loggedIn) {
-    switchView("market");
-  }
+  // gjester = alltid på salgssiden
+  if (!loggedIn) switchView("market");
 }
 
 async function handleLoginClick() {
@@ -100,8 +96,7 @@ async function performLogin() {
   updateAuthUI();
 }
 
-// ===== MODAL helpers =====
-
+// MODAL helpers
 function showModal(sel) {
   const el = $(sel);
   if (!el) return;
@@ -116,7 +111,7 @@ function hideModal(sel) {
   el.classList.add("hidden");
 }
 
-// ===== DATA – ITEMS =====
+// ------- DATA: ITEMS -------
 
 async function loadItems() {
   const { data, error } = await supabase
@@ -125,23 +120,37 @@ async function loadItems() {
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error(error);
+    console.error("Feil ved henting av items:", error);
+    items = [];
+    renderAll();
     return;
   }
   items = data || [];
   renderAll();
 }
 
-// helper: lagre flere bilder i én tekstkolonne (image_url) som "url1|||url2|||url3"
-function serializeImageUrls(arr) {
-  return (arr || []).join("|||");
+// Hjelper: parse én eller flere bilder ut fra image_url
+// - Hvis image_url er JSON-array -> returnerer array
+// - Hvis det er vanlig streng -> returnerer [streng]
+function parseImages(image_url) {
+  if (!image_url) return [];
+  if (image_url.trim().startsWith("[")) {
+    try {
+      const arr = JSON.parse(image_url);
+      return Array.isArray(arr) ? arr : [];
+    } catch (e) {
+      console.warn("Klarte ikke å parse images JSON", e);
+      return [];
+    }
+  }
+  return [image_url];
 }
-function parseImageUrls(str) {
-  if (!str) return [];
-  return String(str)
-    .split("|||")
-    .map((s) => s.trim())
-    .filter(Boolean);
+
+// Når vi lagrer: hvis flere bilder -> lagre som JSON i image_url
+function encodeImagesForStorage(imagesArr) {
+  if (!imagesArr || imagesArr.length === 0) return null;
+  if (imagesArr.length === 1) return imagesArr[0];
+  return JSON.stringify(imagesArr);
 }
 
 async function saveItemFromForm() {
@@ -158,20 +167,18 @@ async function saveItemFromForm() {
     return;
   }
 
+  const image_url = encodeImagesForStorage(currentImageDataUrls);
+
   const payload = {
     title,
     price,
     category,
-    category_key: category.toLowerCase(),
+    category_key: category ? category.toLowerCase() : null,
     location,
     description,
     is_sold: markSold,
+    image_url,
   };
-
-  const imagesString = serializeImageUrls(currentImageDataUrls);
-  if (imagesString) {
-    payload.image_url = imagesString;
-  }
 
   let error;
   if (editingItemId) {
@@ -198,7 +205,12 @@ async function saveItemFromForm() {
 async function deleteCurrentItem() {
   if (!editingItemId) return;
   if (!confirm("Slette denne varen?")) return;
-  const { error } = await supabase.from("items").delete().eq("id", editingItemId);
+
+  const { error } = await supabase
+    .from("items")
+    .delete()
+    .eq("id", editingItemId);
+
   if (error) {
     alert("Kunne ikke slette: " + error.message);
     return;
@@ -208,32 +220,7 @@ async function deleteCurrentItem() {
   await loadItems();
 }
 
-function renderImagePreview() {
-  const container = $("#item-image-preview");
-  if (!container) return;
-
-  if (!currentImageDataUrls.length) {
-    container.classList.add("hidden");
-    container.innerHTML = "";
-    return;
-  }
-
-  container.classList.remove("hidden");
-  container.innerHTML = `
-    <div class="preview-grid">
-      ${currentImageDataUrls
-        .map(
-          (url, idx) => `
-        <div class="preview-thumb">
-          <img src="${url}" alt="Bilde ${idx + 1}" />
-          ${idx === 0 ? '<span class="preview-badge">Hovedbilde</span>' : ""}
-        </div>
-      `
-        )
-        .join("")}
-    </div>
-  `;
-}
+// ----- Ny / rediger vare -----
 
 function openNewItemModal() {
   editingItemId = null;
@@ -245,10 +232,11 @@ function openNewItemModal() {
   $("#item-description").value = "";
   $("#item-mark-sold").checked = false;
   $("#item-delete").classList.add("hidden");
-  $("#item-images").value = "";
 
   currentImageDataUrls = [];
-  renderImagePreview();
+  const preview = $("#item-images-preview");
+  preview.classList.add("hidden");
+  preview.innerHTML = "";
 
   showModal("#item-modal");
 }
@@ -266,18 +254,67 @@ function openEditItemModal(itemId) {
   $("#item-description").value = it.description || "";
   $("#item-mark-sold").checked = !!it.is_sold;
 
-  currentImageDataUrls = parseImageUrls(it.image_url);
-  renderImagePreview();
+  const images = parseImages(it.image_url);
+  currentImageDataUrls = images;
+
+  const preview = $("#item-images-preview");
+  if (images.length) {
+    preview.classList.remove("hidden");
+    preview.innerHTML = images
+      .map(
+        (src) =>
+          `<div class="preview-thumb"><img src="${src}" alt="Forhåndsvisning" /></div>`
+      )
+      .join("");
+  } else {
+    preview.classList.add("hidden");
+    preview.innerHTML = "";
+  }
 
   $("#item-delete").classList.remove("hidden");
   showModal("#item-modal");
 }
 
+// Flere-bilder file-input
+const imagesInput = $("#item-images");
+if (imagesInput) {
+  imagesInput.addEventListener("change", (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    currentImageDataUrls = [];
+    const readerPromises = files.map(
+      (file) =>
+        new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.readAsDataURL(file);
+        })
+    );
+
+    Promise.all(readerPromises).then((results) => {
+      currentImageDataUrls = results;
+      const preview = $("#item-images-preview");
+      preview.classList.remove("hidden");
+      preview.innerHTML = results
+        .map(
+          (src) =>
+            `<div class="preview-thumb"><img src="${src}" alt="Forhåndsvisning" /></div>`
+        )
+        .join("");
+    });
+  });
+}
+
 async function toggleSold(itemId, makeSold) {
   const { error } = await supabase
     .from("items")
-    .update({ is_sold: makeSold, sold_at: makeSold ? new Date().toISOString() : null })
+    .update({
+      is_sold: makeSold,
+      sold_at: makeSold ? new Date().toISOString() : null,
+    })
     .eq("id", itemId);
+
   if (error) {
     alert("Feil ved oppdatering: " + error.message);
     return;
@@ -285,7 +322,7 @@ async function toggleSold(itemId, makeSold) {
   await loadItems();
 }
 
-// ===== REQUESTS =====
+// ------- REQUESTS -------
 
 async function loadRequests() {
   const { data, error } = await supabase
@@ -334,16 +371,13 @@ async function sendRequestForCurrentItem() {
   alert("Forespørsel sendt ✔️");
 }
 
-// ===== RENDERING =====
+// ------- RENDERING -------
 
 function applyFilterAndSearch(list) {
   const q = $("#search-input").value.trim().toLowerCase();
   return list.filter((it) => {
     if (currentFilter === "sale" && it.is_sold) return false;
     if (currentFilter === "sold" && !it.is_sold) return false;
-    if (currentFilter === "all") {
-      // ingen filter på solgt/til salgs
-    }
 
     if (currentCategory && it.category_key !== currentCategory) return false;
 
@@ -369,9 +403,10 @@ function renderAll() {
 
 function renderItemsForMarket() {
   const cont = $("#items-container");
-  const filtered = applyFilterAndSearch(items, false);
+  const filtered = applyFilterAndSearch(items);
   if (!filtered.length) {
-    cont.innerHTML = '<p style="font-size:13px;color:var(--fg-soft);">Ingen varer.</p>';
+    cont.innerHTML =
+      '<p style="font-size:13px;color:var(--fg-soft);margin-top:8px;">Ingen varer.</p>';
     return;
   }
   cont.innerHTML = filtered.map((it) => renderItemCard(it, false)).join("");
@@ -380,10 +415,10 @@ function renderItemsForMarket() {
 
 function renderItemsForAdmin() {
   const cont = $("#admin-items-container");
-  const filtered = applyFilterAndSearch(items, true);
+  const filtered = applyFilterAndSearch(items);
   if (!filtered.length) {
     cont.innerHTML =
-      '<p style="font-size:13px;color:var(--fg-soft);">Ingen varer i listen.</p>';
+      '<p style="font-size:13px;color:var(--fg-soft);margin-top:8px;">Ingen varer i listen.</p>';
     return;
   }
   cont.innerHTML = filtered.map((it) => renderItemCard(it, true)).join("");
@@ -395,12 +430,14 @@ function renderItemCard(it, isAdmin) {
     ? '<span class="badge badge-red">Solgt</span>'
     : '<span class="badge badge-green">Til salgs</span>';
 
-  const priceText = it.price != null ? `${it.price.toLocaleString("no-NO")} kr` : "Gi bud";
+  const priceText =
+    it.price != null ? `${it.price.toLocaleString("no-NO")} kr` : "Gi bud";
 
-  const images = parseImageUrls(it.image_url);
-  const firstImage = images[0];
-  const imageHtml = firstImage
-    ? `<div class="image-thumb"><img src="${firstImage}" alt="Bilde av ${escapeHtml(
+  const images = parseImages(it.image_url);
+  const mainImage = images[0] || null;
+
+  const imageHtml = mainImage
+    ? `<div class="image-thumb"><img src="${mainImage}" alt="Bilde av ${escapeHtml(
         it.title || ""
       )}" /></div>`
     : "";
@@ -488,6 +525,274 @@ function attachCardHandlers(container, isAdmin) {
   });
 }
 
+// ------- Detaljer med galleri -------
+
 function openDetailsModal(itemId) {
   const it = items.find((i) => i.id === itemId);
-  if
+  if (!it) return;
+  currentDetailsItemId = itemId;
+
+  const images = parseImages(it.image_url);
+  const mainImage = images[0] || null;
+  const thumbs = images.slice(1);
+
+  const priceText =
+    it.price != null ? `${it.price.toLocaleString("no-NO")} kr` : "Gi bud";
+  const dateStr = it.created_at
+    ? new Date(it.created_at).toLocaleDateString("no-NO")
+    : "";
+  const soldStr =
+    it.is_sold && it.sold_at
+      ? "Solgt: " + new Date(it.sold_at).toLocaleDateString("no-NO")
+      : "";
+
+  const mainImageHtml = mainImage
+    ? `<div class="details-main-image">
+         <img src="${mainImage}" alt="Bilde av ${escapeHtml(it.title || "")}" />
+       </div>`
+    : "";
+
+  const thumbsHtml =
+    images.length > 1
+      ? `<div class="details-thumbs">
+           ${images
+             .map(
+               (src, index) => `
+             <button class="thumb-btn${
+               index === 0 ? " thumb-btn-active" : ""
+             }" data-index="${index}">
+               <img src="${src}" alt="Bilde ${index + 1}" />
+             </button>`
+             )
+             .join("")}
+         </div>`
+      : "";
+
+  $("#details-content").innerHTML = `
+    <h2>${escapeHtml(it.title || "")}</h2>
+    <p style="margin:4px 0 6px;font-size:15px;"><strong>${priceText}</strong></p>
+    <p style="margin:0 0 4px;font-size:13px;">
+      ${it.description ? escapeHtml(it.description) + "<br>" : ""}
+      ${dateStr ? "Lagt ut: " + dateStr + "<br>" : ""}
+      ${soldStr ? soldStr + "<br>" : ""}
+      ${it.location ? "Lagerplass: " + escapeHtml(it.location) : ""}
+    </p>
+    <div class="badges-row">
+      ${
+        it.is_sold
+          ? '<span class="badge badge-red">Solgt</span>'
+          : '<span class="badge badge-green">Til salgs</span>'
+      }
+      ${it.category ? `<span class="badge badge-grey">${escapeHtml(it.category)}</span>` : ""}
+    </div>
+    ${mainImageHtml}
+    ${thumbsHtml}
+  `;
+
+  // koble thumbnails til hovedbilde
+  const mainImgEl = $("#details-content .details-main-image img");
+  const thumbBtns = Array.from(
+    $("#details-content").querySelectorAll(".thumb-btn")
+  );
+
+  thumbBtns.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const idx = parseInt(btn.getAttribute("data-index"), 10);
+      if (!isNaN(idx) && images[idx] && mainImgEl) {
+        mainImgEl.src = images[idx];
+      }
+      thumbBtns.forEach((b) => b.classList.remove("thumb-btn-active"));
+      btn.classList.add("thumb-btn-active");
+    });
+  });
+
+  showModal("#details-modal");
+}
+
+// ------- Kategorier & oversikt -------
+
+function renderCategories() {
+  const bar = $("#category-bar");
+  const allCats = Array.from(
+    new Set(
+      items
+        .map((i) => (i.category ? i.category.trim() : ""))
+        .filter((c) => c.length > 0)
+    )
+  );
+  if (!allCats.length) {
+    bar.innerHTML = "";
+    return;
+  }
+  const chips = [
+    `<button class="category-chip${
+      currentCategory === null ? " category-chip-active" : ""
+    }" data-cat="__ALL__">Alle kategorier</button>`,
+  ];
+  for (const c of allCats) {
+    const key = c.toLowerCase();
+    chips.push(
+      `<button class="category-chip${
+        currentCategory === key ? " category-chip-active" : ""
+      }" data-cat="${key}">${escapeHtml(c)}</button>`
+    );
+  }
+  bar.innerHTML = chips.join("");
+  bar.querySelectorAll(".category-chip").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const val = btn.getAttribute("data-cat");
+      currentCategory = val === "__ALL__" ? null : val;
+      renderAll();
+    });
+  });
+}
+
+function renderOverview() {
+  const onsale = items.filter((i) => !i.is_sold);
+  const sold = items.filter((i) => i.is_sold);
+  const sumReserve = onsale.reduce((sum, i) => sum + (i.price || 0), 0);
+  const sumSold = sold.reduce((sum, i) => sum + (i.price || 0), 0);
+
+  $("#count-onsale").textContent = onsale.length;
+  $("#count-sold").textContent = sold.length;
+  $("#sum-reserve").textContent = `${sumReserve.toLocaleString("no-NO")} kr`;
+  $("#sum-sold").textContent = `${sumSold.toLocaleString("no-NO")} kr`;
+}
+
+// Requests
+function renderRequests() {
+  const cont = $("#requests-container");
+  if (!requests.length) {
+    cont.innerHTML =
+      '<p style="font-size:13px;color:var(--fg-soft);margin-top:8px;">Ingen forespørsler enda.</p>';
+    return;
+  }
+  cont.innerHTML = requests
+    .map((r) => {
+      const dateStr = r.created_at
+        ? new Date(r.created_at).toLocaleString("no-NO")
+        : "";
+      const title = r.items?.title || "Ukjent vare";
+      return `
+      <article class="request-card">
+        <div class="request-meta">
+          ${escapeHtml(title)} · ${dateStr}<br>
+          ${r.buyer_name ? escapeHtml(r.buyer_name) : ""} ${
+        r.buyer_email ? "· " + escapeHtml(r.buyer_email) : ""
+      } ${r.buyer_phone ? "· " + escapeHtml(r.buyer_phone) : ""}
+        </div>
+        <div>${r.message ? escapeHtml(r.message) : "<i>Ingen melding</i>"}</div>
+      </article>
+    `;
+    })
+    .join("");
+}
+
+// Del-lenke
+function shareItemLink(itemId) {
+  const url = new URL(window.location.href);
+  url.searchParams.set("item", itemId);
+  const link = url.toString();
+
+  if (navigator.share) {
+    navigator.share({ title: "EkstraVerdi – vare", url: link }).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(link).catch(() => {});
+    alert("Lenke kopiert til utklippstavle:\n" + link);
+  }
+}
+
+// VIEW / TABS
+
+function switchView(v) {
+  currentView = v;
+  $$("#admin-nav .nav-pill").forEach((btn) => {
+    btn.classList.toggle(
+      "nav-pill-active",
+      btn.getAttribute("data-view") === v
+    );
+  });
+  ["market", "list", "overview", "requests"].forEach((id) => {
+    $("#" + id + "-view").classList.toggle("active-view", id === v);
+  });
+  if (v === "requests") loadRequests();
+}
+
+function setupTabs() {
+  $$(".tab-pill").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      currentFilter = btn.getAttribute("data-filter");
+      $$(".tab-pill").forEach((b) =>
+        b.classList.toggle("tab-active", b === btn)
+      );
+      renderAll();
+    });
+  });
+}
+
+// Utils
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+// INIT
+
+function initEvents() {
+  $("#theme-toggle")?.addEventListener("click", toggleTheme);
+
+  $("#login-btn")?.addEventListener("click", handleLoginClick);
+  $("#login-cancel")?.addEventListener("click", () =>
+    hideModal("#login-modal")
+  );
+  $("#login-submit")?.addEventListener("click", performLogin);
+
+  $("#fab-add")?.addEventListener("click", openNewItemModal);
+  $("#item-cancel")?.addEventListener("click", () =>
+    hideModal("#item-modal")
+  );
+  $("#item-save")?.addEventListener("click", saveItemFromForm);
+  $("#item-delete")?.addEventListener("click", deleteCurrentItem);
+
+  $("#details-close")?.addEventListener("click", () =>
+    hideModal("#details-modal")
+  );
+  $("#req-send")?.addEventListener("click", sendRequestForCurrentItem);
+
+  $("#search-input")?.addEventListener("input", () => renderAll());
+
+  $$("#admin-nav .nav-pill").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const v = btn.getAttribute("data-view");
+      switchView(v);
+    });
+  });
+
+  setupTabs();
+}
+
+// Deep-link på ?item=ID
+async function initFromDeepLink() {
+  const url = new URL(window.location.href);
+  const itemId = url.searchParams.get("item");
+  if (itemId) {
+    const check = setInterval(() => {
+      if (items.length) {
+        clearInterval(check);
+        openDetailsModal(itemId);
+      }
+    }, 300);
+  }
+}
+
+async function init() {
+  loadTheme();
+  initEvents();
+  await checkSession();
+  await loadItems();
+  await initFromDeepLink();
+}
+
+init();
