@@ -13,14 +13,17 @@
         <div class="brand-name">EkstraVerdi</div>
         <div class="brand-tagline">Ting du ikke trenger → penger du faktisk trenger</div>
       </div>
-      <button id="logoutBtn" class="text-button">Nullstill annonser</button>
+      <div class="header-actions">
+        <button id="themeToggle" class="text-button">Mørk modus</button>
+        <button id="adminBtn" class="text-button">Logg inn som admin</button>
+      </div>
     </div>
   </header>
 
   <nav class="main-nav">
     <button class="nav-tab nav-tab-active" data-view="sales">Salgs­side</button>
-    <button class="nav-tab" data-view="admin">Liste (admin)</button>
-    <button class="nav-tab" data-view="overview">Oversikt</button>
+    <button class="nav-tab admin-tab" data-view="admin">Liste (admin)</button>
+    <button class="nav-tab admin-tab" data-view="overview">Oversikt</button>
   </nav>
 
   <main class="page">
@@ -52,12 +55,12 @@
   <!-- FLYTENDE + KNAPP -->
   <button id="fabAdd" class="fab">+</button>
 
-  <!-- MODAL: NY ANNONSE -->
+  <!-- MODAL: NY / REDIGER ANNONSE -->
   <div id="newAdModal" class="modal-backdrop">
     <div class="modal">
       <header class="modal-header">
-        <h2>Ny annonse</h2>
-        <button class="modal-close" type="button" data-close-modal>&times;</button>
+        <h2 id="adModalTitle">Ny annonse</h2>
+        <button type="button" class="modal-close" data-close-modal>&times;</button>
       </header>
 
       <form id="newAdForm" class="modal-body">
@@ -100,13 +103,14 @@
           <input id="images" type="file" accept="image/*" multiple />
           <small class="help-text">
             Første bilde blir brukt som lite miniatyrbilde i listene.
+            Ved redigering beholdes gamle bilder hvis du ikke laster opp nye.
           </small>
           <div id="newAdImagePreview" class="image-preview-list"></div>
         </div>
 
         <footer class="modal-footer">
           <button type="button" class="btn-secondary" data-close-modal>Avbryt</button>
-          <button type="submit" class="btn-primary">Lagre annonse</button>
+          <button type="submit" class="btn-primary" id="adSubmitBtn">Lagre annonse</button>
         </footer>
       </form>
     </div>
