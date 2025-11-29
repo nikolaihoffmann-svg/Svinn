@@ -14,8 +14,8 @@
         <div class="brand-tagline">Ting du ikke trenger → penger du faktisk trenger</div>
       </div>
       <div class="header-actions">
-        <button id="themeToggle" class="text-button">Mørk modus</button>
-        <button id="adminBtn" class="text-button">Logg inn som admin</button>
+        <button id="themeToggle" class="text-button" type="button">Mørk modus</button>
+        <button id="adminBtn" class="text-button" type="button">Logg inn som admin</button>
       </div>
     </div>
   </header>
@@ -27,7 +27,7 @@
   </nav>
 
   <main class="page">
-    <!-- FILTERLINJE (brukes på salgs- og admin-siden) -->
+    <!-- FILTERLINJE (salgs + admin) -->
     <section id="filterSection" class="filters">
       <div class="filters-row">
         <input
@@ -48,12 +48,12 @@
       </div>
     </section>
 
-    <!-- HER tegner vi innhold for valgt view -->
+    <!-- Innhold byttes av JS -->
     <section id="contentArea"></section>
   </main>
 
   <!-- FLYTENDE + KNAPP -->
-  <button id="fabAdd" class="fab">+</button>
+  <button id="fabAdd" class="fab" type="button">+</button>
 
   <!-- MODAL: NY / REDIGER ANNONSE -->
   <div id="newAdModal" class="modal-backdrop">
@@ -103,7 +103,6 @@
           <input id="images" type="file" accept="image/*" multiple />
           <small class="help-text">
             Første bilde blir brukt som lite miniatyrbilde i listene.
-            Ved redigering beholdes gamle bilder hvis du ikke laster opp nye.
           </small>
           <div id="newAdImagePreview" class="image-preview-list"></div>
         </div>
@@ -111,6 +110,34 @@
         <footer class="modal-footer">
           <button type="button" class="btn-secondary" data-close-modal>Avbryt</button>
           <button type="submit" class="btn-primary" id="adSubmitBtn">Lagre annonse</button>
+        </footer>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ADMIN LOGIN -->
+  <div id="adminLoginModal" class="modal-backdrop">
+    <div class="modal">
+      <header class="modal-header">
+        <h2>Admininnlogging</h2>
+        <button type="button" class="modal-close" data-close-modal>&times;</button>
+      </header>
+
+      <form id="adminLoginForm" class="modal-body">
+        <div class="form-row">
+          <label for="adminEmail">E-post</label>
+          <input id="adminEmail" type="email" placeholder="epost@ekstraverdi.no" />
+        </div>
+        <div class="form-row">
+          <label for="adminPassword">Passord</label>
+          <input id="adminPassword" type="password" />
+        </div>
+        <p id="adminError" class="help-text" style="color:#b91c1c; display:none;">
+          Feil e-post eller passord.
+        </p>
+        <footer class="modal-footer">
+          <button type="button" class="btn-secondary" data-close-modal>Avbryt</button>
+          <button type="submit" class="btn-primary">Logg inn</button>
         </footer>
       </form>
     </div>
