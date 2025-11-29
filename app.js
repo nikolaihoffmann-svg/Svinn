@@ -1,62 +1,63 @@
-// Frontend-app med enkel admin-login (epost+passord), dag/natt og redigerbare annonser
+// EkstraVerdi – frontend med Supabase-auth + lokale annonser
+
+// --- Supabase-oppsett ---
+const SUPABASE_URL = "https://biuiczsfripiytmyskub.supabase.co";
+const SUPABASE_ANON_KEY = "DIN_SUPABASE_ANON_KEY_HER"; // hent fra Supabase → Project Settings → API
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 window.addEventListener("DOMContentLoaded", function () {
-  var STORAGE_KEY = "ekstraverdi_ads_v2";
-  var ADMIN_KEY = "ekstraverdi_isAdmin";
-  var THEME_KEY = "ekstraverdi_theme";
+  const STORAGE_KEY = "ekstraverdi_ads_v2";
+  const THEME_KEY = "ekstraverdi_theme";
 
-  // >>> HER SETTER DU ADMIN-BRUKER <<<
-  var ADMIN_EMAIL = "admin@ekstraverdi.no";
-  var ADMIN_PASSWORD = "niko123"; // bytt til noe du husker
+  // DOM
+  const navTabs = document.querySelectorAll(".nav-tab");
+  const adminTabs = document.querySelectorAll(".admin-tab");
+  const filterSection = document.getElementById("filterSection");
+  const contentArea = document.getElementById("contentArea");
+  const searchInput = document.getElementById("searchInput");
+  const statusChips = document.querySelectorAll("[data-status]");
+  const fabAdd = document.getElementById("fabAdd");
+  const adminBtn = document.getElementById("adminBtn");
+  const themeToggle = document.getElementById("themeToggle");
 
-  var navTabs = document.querySelectorAll(".nav-tab");
-  var adminTabs = document.querySelectorAll(".admin-tab");
-  var filterSection = document.getElementById("filterSection");
-  var contentArea = document.getElementById("contentArea");
-  var searchInput = document.getElementById("searchInput");
-  var statusChips = document.querySelectorAll("[data-status]");
-  var fabAdd = document.getElementById("fabAdd");
-  var adminBtn = document.getElementById("adminBtn");
-  var themeToggle = document.getElementById("themeToggle");
+  const newAdModal = document.getElementById("newAdModal");
+  const newAdForm = document.getElementById("newAdForm");
+  const adModalTitle = document.getElementById("adModalTitle");
+  const adSubmitBtn = document.getElementById("adSubmitBtn");
+  const imagesInput = document.getElementById("images");
+  const imagePreviewList = document.getElementById("newAdImagePreview");
 
-  var newAdModal = document.getElementById("newAdModal");
-  var newAdForm = document.getElementById("newAdForm");
-  var adModalTitle = document.getElementById("adModalTitle");
-  var adSubmitBtn = document.getElementById("adSubmitBtn");
-  var imagesInput = document.getElementById("images");
-  var imagePreviewList = document.getElementById("newAdImagePreview");
+  const adminLoginModal = document.getElementById("adminLoginModal");
+  const adminLoginForm = document.getElementById("adminLoginForm");
+  const adminEmailInput = document.getElementById("adminEmail");
+  const adminPasswordInput = document.getElementById("adminPassword");
+  const adminError = document.getElementById("adminError");
 
-  var adminLoginModal = document.getElementById("adminLoginModal");
-  var adminLoginForm = document.getElementById("adminLoginForm");
-  var adminEmailInput = document.getElementById("adminEmail");
-  var adminPasswordInput = document.getElementById("adminPassword");
-  var adminError = document.getElementById("adminError");
+  const detailModal = document.getElementById("detailModal");
+  const detailTitle = document.getElementById("detailTitle");
+  const detailMainImage = document.getElementById("detailMainImage");
+  const detailThumbs = document.getElementById("detailThumbs");
+  const detailPrice = document.getElementById("detailPrice");
+  const detailStatus = document.getElementById("detailStatus");
+  const detailMeta = document.getElementById("detailMeta");
+  const detailDescription = document.getElementById("detailDescription");
+  const detailExtra = document.getElementById("detailExtra");
+  const detailTags = document.getElementById("detailTags");
 
-  var detailModal = document.getElementById("detailModal");
-  var detailTitle = document.getElementById("detailTitle");
-  var detailMainImage = document.getElementById("detailMainImage");
-  var detailThumbs = document.getElementById("detailThumbs");
-  var detailPrice = document.getElementById("detailPrice");
-  var detailStatus = document.getElementById("detailStatus");
-  var detailMeta = document.getElementById("detailMeta");
-  var detailDescription = document.getElementById("detailDescription");
-  var detailExtra = document.getElementById("detailExtra");
-  var detailTags = document.getElementById("detailTags");
+  // state
+  let currentView = "sales"; // sales | admin | overview
+  let filterStatus = "til-salgs";
+  let searchTerm = "";
+  let newAdImageFiles = [];
+  let editingAdId = null;
+  let isAdmin = false;
 
-  var currentView = "sales";
-  var filterStatus = "til-salgs";
-  var searchTerm = "";
-  var newAdImageFiles = [];
-  var editingAdId = null;
-  var isAdmin = false;
-
-  // ---- Storage ----
-
+  // ---- Storage (annonser lokalt) ----
   function loadAds() {
     try {
-      var raw = localStorage.getItem(STORAGE_KEY);
+      const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return [];
-      var parsed = JSON.parse(raw);
+      const parsed = JSON.parse(raw);
       return Array.isArray(parsed) ? parsed : [];
     } catch (e) {
       return [];
@@ -69,101 +70,104 @@ window.addEventListener("DOMContentLoaded", function () {
     } catch (e) {}
   }
 
-  var ads = loadAds();
+  let ads = loadAds();
 
-  // ---- Theme ----
+  // ---- Tema ----
 
   function applyTheme(theme) {
     if (theme === "dark") {
       document.body.classList.add("dark-theme");
-      themeToggle.textContent = "Lys modus";
+      if (themeToggle) themeToggle.textContent = "Lys modus";
     } else {
       document.body.classList.remove("dark-theme");
-      themeToggle.textContent = "Mørk modus";
+      if (themeToggle) themeToggle.textContent = "Mørk modus";
     }
   }
 
   function loadTheme() {
-    var t;
+    let t = null;
     try {
       t = localStorage.getItem(THEME_KEY);
-    } catch (e) {
-      t = null;
-    }
+    } catch (e) {}
     if (t === "dark" || t === "light") applyTheme(t);
     else applyTheme("light");
   }
 
   loadTheme();
 
-  themeToggle.addEventListener("click", function () {
-    var isDark = document.body.classList.contains("dark-theme");
-    var next = isDark ? "light" : "dark";
-    applyTheme(next);
-    try {
-      localStorage.setItem(THEME_KEY, next);
-    } catch (e) {}
-  });
-
-  // ---- Admin state ----
-
-  function loadAdminState() {
-    try {
-      return localStorage.getItem(ADMIN_KEY) === "1";
-    } catch (e) {
-      return false;
-    }
+  if (themeToggle) {
+    themeToggle.addEventListener("click", () => {
+      const isDark = document.body.classList.contains("dark-theme");
+      const next = isDark ? "light" : "dark";
+      applyTheme(next);
+      try {
+        localStorage.setItem(THEME_KEY, next);
+      } catch (e) {}
+    });
   }
 
-  function saveAdminState() {
-    try {
-      localStorage.setItem(ADMIN_KEY, isAdmin ? "1" : "0");
-    } catch (e) {}
-  }
+  // ---- Admin / auth (Supabase) ----
 
   function updateAdminUI() {
-    adminBtn.textContent = isAdmin ? "Logg ut admin" : "Logg inn som admin";
-    for (var i = 0; i < adminTabs.length; i++) {
-      adminTabs[i].style.display = isAdmin ? "" : "none";
+    if (adminBtn) {
+      adminBtn.textContent = isAdmin ? "Logg ut admin" : "Logg inn som admin";
     }
+    adminTabs.forEach((tab) => {
+      tab.style.display = isAdmin ? "" : "none";
+    });
     if (!isAdmin && (currentView === "admin" || currentView === "overview")) {
       setView("sales");
     }
   }
 
-  isAdmin = loadAdminState();
-  updateAdminUI();
+  async function initAuthFromSupabase() {
+    const { data } = await supabase.auth.getSession();
+    isAdmin = !!data.session;
+    updateAdminUI();
+  }
 
-  adminBtn.addEventListener("click", function () {
-    if (isAdmin) {
-      isAdmin = false;
-      saveAdminState();
-      updateAdminUI();
-    } else {
-      adminEmailInput.value = "";
-      adminPasswordInput.value = "";
-      adminError.style.display = "none";
-      openModal(adminLoginModal);
-    }
-  });
+  initAuthFromSupabase();
 
-  adminLoginForm.addEventListener("submit", function (e) {
+  if (adminBtn) {
+    adminBtn.addEventListener("click", async () => {
+      if (isAdmin) {
+        // logg ut
+        await supabase.auth.signOut();
+        isAdmin = false;
+        updateAdminUI();
+      } else {
+        adminEmailInput.value = "";
+        adminPasswordInput.value = "";
+        adminError.style.display = "none";
+        openModal(adminLoginModal);
+      }
+    });
+  }
+
+  adminLoginForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    var email = adminEmailInput.value.trim();
-    var pass = adminPasswordInput.value;
+    adminError.style.display = "none";
 
-    if (email === ADMIN_EMAIL && pass === ADMIN_PASSWORD) {
-      isAdmin = true;
-      saveAdminState();
-      closeModal(adminLoginModal);
-      updateAdminUI();
-      setView("admin");
-    } else {
+    const email = adminEmailInput.value.trim();
+    const password = adminPasswordInput.value;
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
       adminError.style.display = "block";
+      return;
     }
+
+    isAdmin = true;
+    updateAdminUI();
+    closeModal(adminLoginModal);
+    setView("admin");
   });
 
-  // ---- Modal helpers ----
+  // ---- Modal-hjelpere ----
 
   function openModal(el) {
     if (!el) return;
@@ -175,24 +179,21 @@ window.addEventListener("DOMContentLoaded", function () {
     el.classList.remove("show");
   }
 
-  var closeBtns = document.querySelectorAll("[data-close-modal]");
-  for (var i = 0; i < closeBtns.length; i++) {
-    (function (btn) {
-      btn.addEventListener("click", function () {
-        var modal = btn.closest(".modal-backdrop");
-        closeModal(modal);
-      });
-    })(closeBtns[i]);
-  }
+  document.querySelectorAll("[data-close-modal]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const modal = btn.closest(".modal-backdrop");
+      closeModal(modal);
+    });
+  });
 
-  [newAdModal, detailModal, adminLoginModal].forEach(function (modal) {
+  [newAdModal, detailModal, adminLoginModal].forEach((modal) => {
     if (!modal) return;
-    modal.addEventListener("click", function (e) {
+    modal.addEventListener("click", (e) => {
       if (e.target === modal) closeModal(modal);
     });
   });
 
-  // ---- View switching ----
+  // ---- View-bytter ----
 
   function setView(view) {
     if ((view === "admin" || view === "overview") && !isAdmin) {
@@ -200,51 +201,45 @@ window.addEventListener("DOMContentLoaded", function () {
     }
     currentView = view;
 
-    for (var i = 0; i < navTabs.length; i++) {
-      navTabs[i].classList.remove("nav-tab-active");
-      if (navTabs[i].getAttribute("data-view") === view) {
-        navTabs[i].classList.add("nav-tab-active");
+    navTabs.forEach((tab) => {
+      tab.classList.remove("nav-tab-active");
+      if (tab.getAttribute("data-view") === view) {
+        tab.classList.add("nav-tab-active");
       }
-    }
+    });
 
     filterSection.style.display = view === "overview" ? "none" : "";
     renderCurrentView();
   }
 
-  for (var t = 0; t < navTabs.length; t++) {
-    (function (tab) {
-      tab.addEventListener("click", function () {
-        var view = tab.getAttribute("data-view");
-        setView(view);
-      });
-    })(navTabs[t]);
-  }
+  navTabs.forEach((tab) => {
+    tab.addEventListener("click", () => {
+      const view = tab.getAttribute("data-view");
+      setView(view);
+    });
+  });
 
   // ---- Filter ----
 
   if (searchInput) {
-    searchInput.addEventListener("input", function () {
+    searchInput.addEventListener("input", () => {
       searchTerm = searchInput.value;
       renderCurrentView();
     });
   }
 
-  for (var s = 0; s < statusChips.length; s++) {
-    (function (chip) {
-      chip.addEventListener("click", function () {
-        for (var j = 0; j < statusChips.length; j++) {
-          statusChips[j].classList.remove("filter-chip-active");
-        }
-        chip.classList.add("filter-chip-active");
-        filterStatus = chip.getAttribute("data-status");
-        renderCurrentView();
-      });
-    })(statusChips[s]);
-  }
+  statusChips.forEach((chip) => {
+    chip.addEventListener("click", () => {
+      statusChips.forEach((c) => c.classList.remove("filter-chip-active"));
+      chip.classList.add("filter-chip-active");
+      filterStatus = chip.getAttribute("data-status");
+      renderCurrentView();
+    });
+  });
 
-  // ---- FAB: ny annonse ----
+  // ---- FAB / ny annonse ----
 
-  fabAdd.addEventListener("click", function () {
+  fabAdd.addEventListener("click", () => {
     editingAdId = null;
     adModalTitle.textContent = "Ny annonse";
     adSubmitBtn.textContent = "Lagre annonse";
@@ -254,19 +249,19 @@ window.addEventListener("DOMContentLoaded", function () {
     openModal(newAdModal);
   });
 
-  // ---- Bildepreview ----
+  // ---- bildepreview ----
 
   if (imagesInput) {
-    imagesInput.addEventListener("change", function () {
-      var files = Array.prototype.slice.call(imagesInput.files || []);
+    imagesInput.addEventListener("change", () => {
+      const files = Array.from(imagesInput.files || []);
       newAdImageFiles = files;
       imagePreviewList.innerHTML = "";
-      files.forEach(function (file) {
-        var reader = new FileReader();
-        reader.onload = function (e) {
-          var div = document.createElement("div");
+      files.forEach((file) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const div = document.createElement("div");
           div.className = "image-preview-item";
-          var img = document.createElement("img");
+          const img = document.createElement("img");
           img.src = e.target.result;
           div.appendChild(img);
           imagePreviewList.appendChild(div);
@@ -276,37 +271,30 @@ window.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // ---- Ny/rediger annonse submit ----
+  // ---- lagre / redigere annonse ----
 
-  newAdForm.addEventListener("submit", function (e) {
+  newAdForm.addEventListener("submit", (e) => {
     e.preventDefault();
 
-    var title = document.getElementById("title").value.trim();
-    var priceVal = document.getElementById("price").value.trim();
-    var buyer = document.getElementById("buyer").value.trim();
-    var category = document.getElementById("category").value.trim();
-    var locationVal = document.getElementById("location").value.trim();
-    var description = document.getElementById("description").value.trim();
+    const title = document.getElementById("title").value.trim();
+    const priceVal = document.getElementById("price").value.trim();
+    const buyer = document.getElementById("buyer").value.trim();
+    const category = document.getElementById("category").value.trim();
+    const locationVal = document.getElementById("location").value.trim();
+    const description = document.getElementById("description").value.trim();
 
-    var promises = [];
-    newAdImageFiles.forEach(function (file) {
-      promises.push(
-        new Promise(function (resolve) {
-          var reader = new FileReader();
-          reader.onload = function (evt) {
-            resolve(evt.target.result);
-          };
+    const promises = newAdImageFiles.map(
+      (file) =>
+        new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (evt) => resolve(evt.target.result);
           reader.readAsDataURL(file);
         })
-      );
-    });
+    );
 
-    Promise.all(promises).then(function (images) {
+    Promise.all(promises).then((images) => {
       if (editingAdId) {
-        // oppdater
-        var ad = ads.find(function (a) {
-          return a.id === editingAdId;
-        });
+        const ad = ads.find((a) => a.id === editingAdId);
         if (ad) {
           ad.title = title;
           ad.price = priceVal ? Number(priceVal) : null;
@@ -314,24 +302,21 @@ window.addEventListener("DOMContentLoaded", function () {
           ad.category = category || null;
           ad.location = locationVal || null;
           ad.description = description || "";
-          if (newAdImageFiles.length > 0) {
-            ad.images = images;
-          }
+          if (newAdImageFiles.length > 0) ad.images = images;
           saveAds();
         }
       } else {
-        // ny
-        var newAd = {
+        const newAd = {
           id: Date.now().toString(),
-          title: title,
+          title,
           price: priceVal ? Number(priceVal) : null,
           buyer: buyer || null,
           category: category || null,
           location: locationVal || null,
           description: description || "",
           status: "til-salgs",
-          images: images,
-          createdAt: new Date().toISOString()
+          images,
+          createdAt: new Date().toISOString(),
         };
         ads.unshift(newAd);
         saveAds();
@@ -343,14 +328,14 @@ window.addEventListener("DOMContentLoaded", function () {
     });
   });
 
-  // ---- Hjelpefunksjoner ----
+  // ---- helpers ----
 
   function timeAgo(iso) {
-    var d = new Date(iso);
-    var diffMs = Date.now() - d.getTime();
-    var mins = Math.floor(diffMs / 60000);
-    var hours = Math.floor(mins / 60);
-    var days = Math.floor(hours / 24);
+    const d = new Date(iso);
+    const diffMs = Date.now() - d.getTime();
+    const mins = Math.floor(diffMs / 60000);
+    const hours = Math.floor(mins / 60);
+    const days = Math.floor(hours / 24);
     if (mins < 1) return "akkurat nå";
     if (mins < 60) return mins + " min siden";
     if (hours < 24) return hours + " t siden";
@@ -359,13 +344,13 @@ window.addEventListener("DOMContentLoaded", function () {
   }
 
   function formatDateLong(iso) {
-    var d = new Date(iso);
+    const d = new Date(iso);
     return d.toLocaleString("nb-NO", {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
       hour: "2-digit",
-      minute: "2-digit"
+      minute: "2-digit",
     });
   }
 
@@ -374,10 +359,10 @@ window.addEventListener("DOMContentLoaded", function () {
   }
 
   function filterAdsForList() {
-    return ads.filter(function (ad) {
+    return ads.filter((ad) => {
       if (filterStatus !== "alle" && ad.status !== filterStatus) return false;
       if (!searchTerm) return true;
-      var text =
+      const text =
         (ad.title || "") +
         " " +
         (ad.description || "") +
@@ -385,14 +370,14 @@ window.addEventListener("DOMContentLoaded", function () {
         (ad.category || "") +
         " " +
         (ad.location || "");
-      return text.toLowerCase().indexOf(searchTerm.toLowerCase()) !== -1;
+      return text.toLowerCase().includes(searchTerm.toLowerCase());
     });
   }
 
-  // ---- Render liste ----
+  // ---- render liste ----
 
   function renderList(isAdminList) {
-    var list = filterAdsForList();
+    const list = filterAdsForList();
 
     if (!list.length) {
       contentArea.innerHTML =
@@ -401,31 +386,31 @@ window.addEventListener("DOMContentLoaded", function () {
     }
 
     contentArea.innerHTML = "";
-    list.forEach(function (ad) {
-      var card = document.createElement("article");
+    list.forEach((ad) => {
+      const card = document.createElement("article");
       card.className = "ad-card";
 
-      var thumb = document.createElement("div");
+      const thumb = document.createElement("div");
       thumb.className = "ad-thumb";
       if (ad.images && ad.images.length) {
-        var img = document.createElement("img");
+        const img = document.createElement("img");
         img.src = ad.images[0];
         img.alt = ad.title;
         thumb.appendChild(img);
       }
       card.appendChild(thumb);
 
-      var info = document.createElement("div");
+      const info = document.createElement("div");
       info.className = "ad-info";
 
-      var titleRow = document.createElement("div");
+      const titleRow = document.createElement("div");
       titleRow.className = "ad-title-row";
 
-      var titleEl = document.createElement("div");
+      const titleEl = document.createElement("div");
       titleEl.className = "ad-title";
       titleEl.textContent = ad.title;
 
-      var priceEl = document.createElement("div");
+      const priceEl = document.createElement("div");
       priceEl.className = "ad-price";
       priceEl.textContent =
         ad.price != null ? formatCurrency(ad.price) : "Gi bud";
@@ -433,9 +418,9 @@ window.addEventListener("DOMContentLoaded", function () {
       titleRow.appendChild(titleEl);
       titleRow.appendChild(priceEl);
 
-      var meta = document.createElement("div");
+      const meta = document.createElement("div");
       meta.className = "ad-meta";
-      var statusText =
+      const statusText =
         ad.status === "til-salgs"
           ? "til salgs"
           : ad.status === "reservert"
@@ -444,10 +429,10 @@ window.addEventListener("DOMContentLoaded", function () {
       meta.textContent =
         statusText + " · Lagt ut: " + formatDateLong(ad.createdAt);
 
-      var tags = document.createElement("div");
+      const tags = document.createElement("div");
       tags.className = "ad-tags";
 
-      var stTag = document.createElement("span");
+      const stTag = document.createElement("span");
       stTag.className =
         "tag-pill tag-pill-status-" + ad.status.replace(" ", "-");
       stTag.textContent =
@@ -459,47 +444,42 @@ window.addEventListener("DOMContentLoaded", function () {
       tags.appendChild(stTag);
 
       if (ad.category) {
-        var catTag = document.createElement("span");
+        const catTag = document.createElement("span");
         catTag.className = "tag-pill";
         catTag.textContent = ad.category;
         tags.appendChild(catTag);
       }
 
       if (ad.location) {
-        var locTag = document.createElement("span");
+        const locTag = document.createElement("span");
         locTag.className = "tag-pill";
         locTag.textContent = ad.location;
         tags.appendChild(locTag);
       }
 
-      var footer = document.createElement("div");
+      const footer = document.createElement("div");
       footer.className = "ad-footer";
 
-      var footerLeft = document.createElement("div");
+      const footerLeft = document.createElement("div");
       footerLeft.className = "ad-footer-left";
 
-      var btnDetails = document.createElement("button");
+      const btnDetails = document.createElement("button");
       btnDetails.type = "button";
       btnDetails.className = "btn-link";
       btnDetails.textContent = "Detaljer";
-      btnDetails.addEventListener("click", function () {
-        openDetail(ad);
-      });
-
+      btnDetails.addEventListener("click", () => openDetail(ad));
       footerLeft.appendChild(btnDetails);
 
       if (!isAdminList) {
-        var btnShare = document.createElement("button");
+        const btnShare = document.createElement("button");
         btnShare.type = "button";
         btnShare.className = "btn-link";
         btnShare.textContent = "Del lenke";
-        btnShare.addEventListener("click", function () {
-          shareAd(ad);
-        });
+        btnShare.addEventListener("click", () => shareAd(ad));
         footerLeft.appendChild(btnShare);
       }
 
-      var timeEl = document.createElement("div");
+      const timeEl = document.createElement("div");
       timeEl.className = "time-ago";
       timeEl.textContent = timeAgo(ad.createdAt);
 
@@ -512,45 +492,41 @@ window.addEventListener("DOMContentLoaded", function () {
       info.appendChild(footer);
 
       if (isAdminList) {
-        var adminControls = document.createElement("div");
+        const adminControls = document.createElement("div");
         adminControls.className = "admin-controls";
 
-        var statusSelect = document.createElement("select");
+        const statusSelect = document.createElement("select");
         statusSelect.className = "admin-status-select";
         [
           { value: "til-salgs", label: "Til salgs" },
           { value: "reservert", label: "Reservert" },
-          { value: "solgt", label: "Solgt" }
-        ].forEach(function (optCfg) {
-          var opt = document.createElement("option");
+          { value: "solgt", label: "Solgt" },
+        ].forEach((optCfg) => {
+          const opt = document.createElement("option");
           opt.value = optCfg.value;
           opt.textContent = optCfg.label;
           if (optCfg.value === ad.status) opt.selected = true;
           statusSelect.appendChild(opt);
         });
-        statusSelect.addEventListener("change", function () {
+        statusSelect.addEventListener("change", () => {
           ad.status = statusSelect.value;
           saveAds();
           renderCurrentView();
         });
 
-        var editBtn = document.createElement("button");
+        const editBtn = document.createElement("button");
         editBtn.type = "button";
         editBtn.className = "btn-link";
         editBtn.textContent = "Rediger";
-        editBtn.addEventListener("click", function () {
-          openEditAd(ad);
-        });
+        editBtn.addEventListener("click", () => openEditAd(ad));
 
-        var deleteBtn = document.createElement("button");
+        const deleteBtn = document.createElement("button");
         deleteBtn.type = "button";
         deleteBtn.className = "btn-small-danger";
         deleteBtn.textContent = "Slett";
-        deleteBtn.addEventListener("click", function () {
+        deleteBtn.addEventListener("click", () => {
           if (window.confirm("Slette denne annonsen?")) {
-            ads = ads.filter(function (a) {
-              return a.id !== ad.id;
-            });
+            ads = ads.filter((a) => a.id !== ad.id);
             saveAds();
             renderCurrentView();
           }
@@ -559,7 +535,6 @@ window.addEventListener("DOMContentLoaded", function () {
         adminControls.appendChild(statusSelect);
         adminControls.appendChild(editBtn);
         adminControls.appendChild(deleteBtn);
-
         info.appendChild(adminControls);
       }
 
@@ -569,16 +544,16 @@ window.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // ---- Oversikt ----
+  // ---- oversikt ----
 
   function renderOverview() {
-    var totalCount = ads.length;
-    var sumTilSalgs = 0;
-    var sumReservert = 0;
-    var sumSolgt = 0;
-    var countReservert = 0;
+    const totalCount = ads.length;
+    let sumTilSalgs = 0;
+    let sumReservert = 0;
+    let sumSolgt = 0;
+    let countReservert = 0;
 
-    ads.forEach(function (ad) {
+    ads.forEach((ad) => {
       if (ad.price == null) return;
       if (ad.status === "til-salgs") sumTilSalgs += ad.price;
       else if (ad.status === "reservert") {
@@ -587,7 +562,7 @@ window.addEventListener("DOMContentLoaded", function () {
       } else if (ad.status === "solgt") sumSolgt += ad.price;
     });
 
-    var html = "";
+    let html = "";
     html += '<div class="overview-grid">';
     html += '<div class="overview-card">';
     html += '<div class="overview-title">Totalt antall annonser</div>';
@@ -621,7 +596,7 @@ window.addEventListener("DOMContentLoaded", function () {
     contentArea.innerHTML = html;
   }
 
-  // ---- Detaljmodal ----
+  // ---- detaljmodal ----
 
   function openDetail(ad) {
     detailTitle.textContent = ad.title;
@@ -637,14 +612,14 @@ window.addEventListener("DOMContentLoaded", function () {
     detailDescription.textContent =
       ad.description || "Ingen beskrivelse lagt inn.";
 
-    var extraParts = [];
+    const extraParts = [];
     if (ad.buyer) extraParts.push("Kjøper: " + ad.buyer);
     if (ad.location) extraParts.push("Lagerplass: " + ad.location);
     detailExtra.textContent = extraParts.join(" • ");
 
     detailTags.innerHTML = "";
     if (ad.category) {
-      var tag = document.createElement("span");
+      const tag = document.createElement("span");
       tag.className = "tag-pill";
       tag.textContent = ad.category;
       detailTags.appendChild(tag);
@@ -653,19 +628,18 @@ window.addEventListener("DOMContentLoaded", function () {
     detailThumbs.innerHTML = "";
     if (ad.images && ad.images.length) {
       detailMainImage.src = ad.images[0];
-      ad.images.forEach(function (src, idx) {
-        var btn = document.createElement("button");
+      ad.images.forEach((src, idx) => {
+        const btn = document.createElement("button");
         btn.type = "button";
         btn.className = "detail-thumb" + (idx === 0 ? " active" : "");
-        var img = document.createElement("img");
+        const img = document.createElement("img");
         img.src = src;
         btn.appendChild(img);
-        btn.addEventListener("click", function () {
+        btn.addEventListener("click", () => {
           detailMainImage.src = src;
-          var children = detailThumbs.children;
-          for (var j = 0; j < children.length; j++) {
-            children[j].classList.remove("active");
-          }
+          Array.from(detailThumbs.children).forEach((c) =>
+            c.classList.remove("active")
+          );
           btn.classList.add("active");
         });
         detailThumbs.appendChild(btn);
@@ -683,15 +657,13 @@ window.addEventListener("DOMContentLoaded", function () {
         .share({
           title: ad.title,
           text: "Sjekk denne annonsen",
-          url: window.location.href
+          url: window.location.href,
         })
-        .catch(function () {});
+        .catch(() => {});
     } else {
       alert("Kopier lenken i adressefeltet for å dele.");
     }
   }
-
-  // ---- Rediger annonse ----
 
   function openEditAd(ad) {
     editingAdId = ad.id;
@@ -709,10 +681,10 @@ window.addEventListener("DOMContentLoaded", function () {
     newAdImageFiles = [];
     imagePreviewList.innerHTML = "";
     if (ad.images && ad.images.length) {
-      ad.images.forEach(function (src) {
-        var div = document.createElement("div");
+      ad.images.forEach((src) => {
+        const div = document.createElement("div");
         div.className = "image-preview-item";
-        var img = document.createElement("img");
+        const img = document.createElement("img");
         img.src = src;
         div.appendChild(img);
         imagePreviewList.appendChild(div);
@@ -722,7 +694,7 @@ window.addEventListener("DOMContentLoaded", function () {
     openModal(newAdModal);
   }
 
-  // ---- Render current view ----
+  // ---- render current view ----
 
   function renderCurrentView() {
     if (currentView === "overview") renderOverview();
@@ -730,6 +702,6 @@ window.addEventListener("DOMContentLoaded", function () {
     else renderList(false);
   }
 
-  // Init
+  // init
   setView("sales");
 });
