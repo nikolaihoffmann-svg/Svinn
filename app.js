@@ -2,14 +2,14 @@
 
 // --- Supabase-oppsett ---
 const SUPABASE_URL = "https://biuiczsfripiytmyskub.supabase.co";
-const SUPABASE_ANON_KEY = "DIN_SUPABASE_ANON_KEY_HER"; // hent fra Supabase → Project Settings → API
+const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY_HERE"; // <-- LIM INN ANON KEY HER
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 window.addEventListener("DOMContentLoaded", function () {
   const STORAGE_KEY = "ekstraverdi_ads_v2";
   const THEME_KEY = "ekstraverdi_theme";
 
-  // DOM
+  // DOM-elementer
   const navTabs = document.querySelectorAll(".nav-tab");
   const adminTabs = document.querySelectorAll(".admin-tab");
   const filterSection = document.getElementById("filterSection");
@@ -45,14 +45,15 @@ window.addEventListener("DOMContentLoaded", function () {
   const detailTags = document.getElementById("detailTags");
 
   // state
-  let currentView = "sales"; // sales | admin | overview
+  let currentView = "sales"; // "sales" | "admin" | "overview"
   let filterStatus = "til-salgs";
   let searchTerm = "";
   let newAdImageFiles = [];
   let editingAdId = null;
   let isAdmin = false;
 
-  // ---- Storage (annonser lokalt) ----
+  // ---------------- STORAGE (annonser lokalt) ----------------
+
   function loadAds() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -67,12 +68,14 @@ window.addEventListener("DOMContentLoaded", function () {
   function saveAds() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(ads));
-    } catch (e) {}
+    } catch (e) {
+      // ignorér
+    }
   }
 
   let ads = loadAds();
 
-  // ---- Tema ----
+  // ---------------- TEMA ----------------
 
   function applyTheme(theme) {
     if (theme === "dark") {
@@ -106,7 +109,7 @@ window.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // ---- Admin / auth (Supabase) ----
+  // ---------------- ADMIN / AUTH (Supabase) ----------------
 
   function updateAdminUI() {
     if (adminBtn) {
@@ -131,13 +134,15 @@ window.addEventListener("DOMContentLoaded", function () {
   if (adminBtn) {
     adminBtn.addEventListener("click", async () => {
       if (isAdmin) {
-        // logg ut
+        // Logg ut
         await supabase.auth.signOut();
         isAdmin = false;
         updateAdminUI();
       } else {
+        // Vis login-modal
         adminEmailInput.value = "";
         adminPasswordInput.value = "";
+        adminError.textContent = "Feil e-post eller passord.";
         adminError.style.display = "none";
         openModal(adminLoginModal);
       }
@@ -153,10 +158,13 @@ window.addEventListener("DOMContentLoaded", function () {
 
     const { error } = await supabase.auth.signInWithPassword({
       email,
-      password,
+      password
     });
 
     if (error) {
+      // viser også Supabase-melding for debugging
+      adminError.textContent =
+        "Feil e-post eller passord: " + (error.message || "");
       adminError.style.display = "block";
       return;
     }
@@ -167,7 +175,7 @@ window.addEventListener("DOMContentLoaded", function () {
     setView("admin");
   });
 
-  // ---- Modal-hjelpere ----
+  // ---------------- MODAL-HJELPERE ----------------
 
   function openModal(el) {
     if (!el) return;
@@ -193,7 +201,7 @@ window.addEventListener("DOMContentLoaded", function () {
     });
   });
 
-  // ---- View-bytter ----
+  // ---------------- VIEW-BYTTING ----------------
 
   function setView(view) {
     if ((view === "admin" || view === "overview") && !isAdmin) {
@@ -219,7 +227,7 @@ window.addEventListener("DOMContentLoaded", function () {
     });
   });
 
-  // ---- Filter ----
+  // ---------------- FILTER ----------------
 
   if (searchInput) {
     searchInput.addEventListener("input", () => {
@@ -237,7 +245,7 @@ window.addEventListener("DOMContentLoaded", function () {
     });
   });
 
-  // ---- FAB / ny annonse ----
+  // ---------------- NY ANNONSE / FAB ----------------
 
   fabAdd.addEventListener("click", () => {
     editingAdId = null;
@@ -249,8 +257,7 @@ window.addEventListener("DOMContentLoaded", function () {
     openModal(newAdModal);
   });
 
-  // ---- bildepreview ----
-
+  // Bildepreview i annonseskjema
   if (imagesInput) {
     imagesInput.addEventListener("change", () => {
       const files = Array.from(imagesInput.files || []);
@@ -271,7 +278,7 @@ window.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // ---- lagre / redigere annonse ----
+  // ---------------- LAGRE / REDIGERE ANNONSE ----------------
 
   newAdForm.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -294,6 +301,7 @@ window.addEventListener("DOMContentLoaded", function () {
 
     Promise.all(promises).then((images) => {
       if (editingAdId) {
+        // Oppdater eksisterende annonse
         const ad = ads.find((a) => a.id === editingAdId);
         if (ad) {
           ad.title = title;
@@ -306,6 +314,7 @@ window.addEventListener("DOMContentLoaded", function () {
           saveAds();
         }
       } else {
+        // Ny annonse
         const newAd = {
           id: Date.now().toString(),
           title,
@@ -316,7 +325,7 @@ window.addEventListener("DOMContentLoaded", function () {
           description: description || "",
           status: "til-salgs",
           images,
-          createdAt: new Date().toISOString(),
+          createdAt: new Date().toISOString()
         };
         ads.unshift(newAd);
         saveAds();
@@ -328,7 +337,7 @@ window.addEventListener("DOMContentLoaded", function () {
     });
   });
 
-  // ---- helpers ----
+  // ---------------- HJELPEFUNKSJONER ----------------
 
   function timeAgo(iso) {
     const d = new Date(iso);
@@ -350,7 +359,7 @@ window.addEventListener("DOMContentLoaded", function () {
       month: "2-digit",
       year: "numeric",
       hour: "2-digit",
-      minute: "2-digit",
+      minute: "2-digit"
     });
   }
 
@@ -374,7 +383,7 @@ window.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // ---- render liste ----
+  // ---------------- RENDER LISTE ----------------
 
   function renderList(isAdminList) {
     const list = filterAdsForList();
@@ -491,6 +500,7 @@ window.addEventListener("DOMContentLoaded", function () {
       info.appendChild(tags);
       info.appendChild(footer);
 
+      // ADMIN-KONTROLLER
       if (isAdminList) {
         const adminControls = document.createElement("div");
         adminControls.className = "admin-controls";
@@ -500,7 +510,7 @@ window.addEventListener("DOMContentLoaded", function () {
         [
           { value: "til-salgs", label: "Til salgs" },
           { value: "reservert", label: "Reservert" },
-          { value: "solgt", label: "Solgt" },
+          { value: "solgt", label: "Solgt" }
         ].forEach((optCfg) => {
           const opt = document.createElement("option");
           opt.value = optCfg.value;
@@ -544,7 +554,7 @@ window.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // ---- oversikt ----
+  // ---------------- OVERSIKT ----------------
 
   function renderOverview() {
     const totalCount = ads.length;
@@ -596,7 +606,7 @@ window.addEventListener("DOMContentLoaded", function () {
     contentArea.innerHTML = html;
   }
 
-  // ---- detaljmodal ----
+  // ---------------- DETALJMODAL ----------------
 
   function openDetail(ad) {
     detailTitle.textContent = ad.title;
@@ -657,7 +667,7 @@ window.addEventListener("DOMContentLoaded", function () {
         .share({
           title: ad.title,
           text: "Sjekk denne annonsen",
-          url: window.location.href,
+          url: window.location.href
         })
         .catch(() => {});
     } else {
@@ -694,7 +704,7 @@ window.addEventListener("DOMContentLoaded", function () {
     openModal(newAdModal);
   }
 
-  // ---- render current view ----
+  // ---------------- RENDER CURRENT VIEW ----------------
 
   function renderCurrentView() {
     if (currentView === "overview") renderOverview();
@@ -702,6 +712,6 @@ window.addEventListener("DOMContentLoaded", function () {
     else renderList(false);
   }
 
-  // init
+  // Init
   setView("sales");
 });
