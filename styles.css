@@ -205,10 +205,17 @@ body {
   color: var(--text-dark);
 }
 
+/* HINT for hvilken view som er aktiv */
+.view-hint {
+  font-size: 11px;
+  color: var(--text-softer);
+  margin-bottom: 4px;
+}
+
 /* LISTE / KORT */
 
 .content {
-  margin-top: 10px;
+  margin-top: 8px;
 }
 
 .ad-list {
@@ -276,7 +283,7 @@ body {
   color: #bbf7d0;
 }
 
-/* BILDE I LISTA – NØKKELEN: FAST LAV HØYDE */
+/* BILDE I LISTA – FAST LAV HØYDE */
 
 .ad-image-wrapper {
   margin-top: 6px;
@@ -284,7 +291,6 @@ body {
   overflow: hidden;
   position: relative;
   background: #020617;
-  /* Høyden på bildet i feeden */
   height: 160px !important;
   max-height: 160px !important;
 }
@@ -297,7 +303,7 @@ body {
   display: block;
 }
 
-/* liten teller for flere bilder */
+/* teller for flere bilder */
 .ad-image-count {
   position: absolute;
   right: 8px;
