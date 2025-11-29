@@ -25,10 +25,10 @@
 
     <!-- TABBAR -->
     <nav class="tabs">
-      <button class="tab active">Salgs­side</button>
-      <button class="tab">Liste (admin)</button>
-      <button class="tab">Oversikt</button>
-      <button class="tab">Forespørsler</button>
+      <button class="tab active" data-view="sales">Salgs­side</button>
+      <button class="tab" data-view="admin">Liste (admin)</button>
+      <button class="tab" data-view="overview">Oversikt</button>
+      <button class="tab" data-view="requests">Forespørsler</button>
     </nav>
 
     <!-- SØK / FILTER -->
@@ -61,6 +61,7 @@
 
     <!-- LISTE MED ANNONSER -->
     <main class="content">
+      <div id="viewHint" class="view-hint"></div>
       <div id="adList" class="ad-list">
         <!-- Fylles av JS -->
       </div>
