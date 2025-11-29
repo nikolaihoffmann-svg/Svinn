@@ -1,8 +1,31 @@
-// Enkel "database" i minnet
-let ads = [];
+const STORAGE_KEY = "ekstraverdi_ads_v1";
+
+// LAST / LAGRE I LOCALSTORAGE
+function loadAdsFromStorage() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveAdsToStorage() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(ads));
+  } catch {
+    // ignorér
+  }
+}
+
+// "Database" i minne
+let ads = loadAdsFromStorage();
 
 // ELEMENTER
 const adListEl = document.getElementById("adList");
+const viewHintEl = document.getElementById("viewHint");
 const fabAdd = document.getElementById("fabAdd");
 const newAdModal = document.getElementById("newAdModal");
 const newAdForm = document.getElementById("newAdForm");
@@ -12,6 +35,7 @@ const imagePreviewList = document.getElementById("newAdImagePreview");
 const searchInput = document.getElementById("searchInput");
 const statusChips = document.querySelectorAll("[data-filter-status]");
 const categoryChips = document.querySelectorAll("[data-filter-category]");
+const tabs = document.querySelectorAll(".tab");
 
 // detaljmodal
 const detailModal = document.getElementById("detailModal");
@@ -29,6 +53,7 @@ let newAdImageFiles = [];
 let filterStatus = "til-salgs";
 let filterCategory = "alle";
 let searchTerm = "";
+let currentView = "sales";
 
 // HJELP: vis modal
 function openModal(el) {
@@ -53,6 +78,30 @@ document.querySelectorAll("[data-close-modal]").forEach((btn) => {
     if (e.target === modal) closeModal(modal);
   });
 });
+
+// TABS – gjør at Liste (admin) osv faktisk synes å fungere
+tabs.forEach((tab) => {
+  tab.addEventListener("click", () => {
+    tabs.forEach((t) => t.classList.remove("active"));
+    tab.classList.add("active");
+    currentView = tab.dataset.view || "sales";
+    updateViewHint();
+    renderAds();
+  });
+});
+
+function updateViewHint() {
+  if (currentView === "sales") {
+    viewHintEl.textContent = "";
+  } else if (currentView === "admin") {
+    viewHintEl.textContent =
+      "Adminvisning (foreløpig samme liste, senere kan vi legge til redigering/sletting osv).";
+  } else if (currentView === "overview") {
+    viewHintEl.textContent = "Oversikt kommer – foreløpig viser vi samme liste.";
+  } else if (currentView === "requests") {
+    viewHintEl.textContent = "Forespørsler kommer – foreløpig viser vi samme liste.";
+  }
+}
 
 // + KNAPP
 fabAdd.addEventListener("click", () => {
@@ -117,6 +166,7 @@ newAdForm.addEventListener("submit", async (e) => {
   };
 
   ads.unshift(ad);
+  saveAdsToStorage();
   closeModal(newAdModal);
   renderAds();
 });
@@ -164,232 +214,4 @@ function renderAds() {
 
     const left = document.createElement("div");
     const titleEl = document.createElement("div");
-    titleEl.className = "ad-title";
-    titleEl.textContent = ad.title;
-
-    const subtitle = document.createElement("div");
-    subtitle.className = "ad-subtitle";
-
-    const dateStr = formatDateShort(ad.createdAt);
-    const buyerText = ad.buyer ? `selges til ${ad.buyer}` : "til salgs";
-    subtitle.textContent = `${buyerText} · Lagt ut: ${dateStr}`;
-
-    left.appendChild(titleEl);
-    left.appendChild(subtitle);
-
-    const priceEl = document.createElement("div");
-    priceEl.className = "ad-price";
-    priceEl.textContent =
-      ad.price != null ? `${ad.price.toLocaleString("nb-NO")} kr` : "Gi bud";
-
-    header.appendChild(left);
-    header.appendChild(priceEl);
-
-    const tagRow = document.createElement("div");
-    tagRow.className = "tag-row";
-
-    const statusTag = document.createElement("span");
-    statusTag.className = "tag-pill tag-pill-primary";
-    statusTag.textContent = ad.status === "til-salgs" ? "Til salgs" : "Solgt";
-    tagRow.appendChild(statusTag);
-
-    if (ad.category) {
-      const catTag = document.createElement("span");
-      catTag.className = "tag-pill";
-      catTag.textContent = ad.category;
-      tagRow.appendChild(catTag);
-    }
-
-    if (ad.location) {
-      const locTag = document.createElement("span");
-      locTag.className = "tag-pill";
-      locTag.textContent = ad.location;
-      tagRow.appendChild(locTag);
-    }
-
-    const imgWrapper = document.createElement("div");
-    imgWrapper.className = "ad-image-wrapper";
-
-    if (ad.images && ad.images.length) {
-      const img = document.createElement("img");
-      img.src = ad.images[0];
-      img.alt = ad.title;
-      imgWrapper.appendChild(img);
-
-      if (ad.images.length > 1) {
-        const count = document.createElement("div");
-        count.className = "ad-image-count";
-        count.textContent = `+${ad.images.length - 1}`;
-        imgWrapper.appendChild(count);
-      }
-    } else {
-      imgWrapper.style.display = "flex";
-      imgWrapper.style.alignItems = "center";
-      imgWrapper.style.justifyContent = "center";
-      imgWrapper.textContent = "Ingen bilde";
-    }
-
-    const footer = document.createElement("div");
-    footer.className = "ad-footer-row";
-
-    const footerLeft = document.createElement("div");
-    footerLeft.className = "ad-footer-left";
-
-    const btnDetails = document.createElement("button");
-    btnDetails.className = "btn-small btn-small-primary";
-    btnDetails.type = "button";
-    btnDetails.textContent = "Detaljer";
-    btnDetails.addEventListener("click", () => openDetailModal(ad));
-
-    const btnShare = document.createElement("button");
-    btnShare.className = "btn-small btn-small-secondary";
-    btnShare.type = "button";
-    btnShare.textContent = "Del lenke";
-    btnShare.addEventListener("click", () => {
-      if (navigator.share) {
-        navigator
-          .share({
-            title: ad.title,
-            text: "Sjekk ut denne tingen på EkstraVerdi",
-            url: window.location.href,
-          })
-          .catch(() => {});
-      } else {
-        alert("Kopier lenken i adressefeltet for å dele 🙂");
-      }
-    });
-
-    footerLeft.appendChild(btnDetails);
-    footerLeft.appendChild(btnShare);
-
-    const timeEl = document.createElement("div");
-    timeEl.className = "ad-time";
-    timeEl.textContent = timeAgo(ad.createdAt);
-
-    footer.appendChild(footerLeft);
-    footer.appendChild(timeEl);
-
-    card.appendChild(header);
-    card.appendChild(tagRow);
-    card.appendChild(imgWrapper);
-    card.appendChild(footer);
-
-    adListEl.appendChild(card);
-  });
-}
-
-// DETALJMODAL
-function openDetailModal(ad) {
-  detailTitle.textContent = ad.title;
-  const dateStr = formatDateLong(ad.createdAt);
-  detailMeta.textContent = `Lagt ut ${dateStr}`;
-
-  detailPrice.textContent =
-    ad.price != null ? `${ad.price.toLocaleString("nb-NO")} kr` : "Gi bud";
-  detailStatus.textContent = ad.status === "til-salgs" ? "Til salgs" : "Solgt";
-
-  detailDescription.textContent =
-    ad.description || "Ingen beskrivelse lagt inn.";
-  const extraBits = [];
-  if (ad.buyer) extraBits.push(`Kjøper: ${ad.buyer}`);
-  if (ad.location) extraBits.push(`Lagerplass: ${ad.location}`);
-  detailExtra.textContent = extraBits.join(" • ");
-
-  detailTags.innerHTML = "";
-  const t1 = document.createElement("span");
-  t1.className = "tag-pill tag-pill-primary";
-  t1.textContent = ad.status === "til-salgs" ? "Til salgs" : "Solgt";
-  detailTags.appendChild(t1);
-  if (ad.category) {
-    const t2 = document.createElement("span");
-    t2.className = "tag-pill";
-    t2.textContent = ad.category;
-    detailTags.appendChild(t2);
-  }
-
-  detailThumbs.innerHTML = "";
-  if (ad.images && ad.images.length) {
-    detailMainImage.src = ad.images[0];
-
-    ad.images.forEach((src, idx) => {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "detail-thumb" + (idx === 0 ? " active" : "");
-      const img = document.createElement("img");
-      img.src = src;
-      btn.appendChild(img);
-      btn.addEventListener("click", () => {
-        detailMainImage.src = src;
-        Array.from(detailThumbs.children).forEach((c) =>
-          c.classList.remove("active")
-        );
-        btn.classList.add("active");
-      });
-      detailThumbs.appendChild(btn);
-    });
-  } else {
-    detailMainImage.src = "";
-  }
-
-  openModal(detailModal);
-}
-
-/* FILTRE */
-
-statusChips.forEach((chip) => {
-  chip.addEventListener("click", () => {
-    statusChips.forEach((c) => c.classList.remove("chip-active"));
-    chip.classList.add("chip-active");
-    filterStatus = chip.dataset.filterStatus;
-    renderAds();
-  });
-});
-
-categoryChips.forEach((chip) => {
-  chip.addEventListener("click", () => {
-    categoryChips.forEach((c) => c.classList.remove("chip-active"));
-    chip.classList.add("chip-active");
-    filterCategory = chip.dataset.filterCategory;
-    renderAds();
-  });
-});
-
-searchInput.addEventListener("input", () => {
-  searchTerm = searchInput.value;
-  renderAds();
-});
-
-/* HJELPEFUNKSJONER */
-
-function timeAgo(iso) {
-  const d = new Date(iso);
-  const diffMs = Date.now() - d.getTime();
-  const mins = Math.floor(diffMs / 60000);
-  const hours = Math.floor(mins / 60);
-  const days = Math.floor(hours / 24);
-
-  if (mins < 1) return "akkurat nå";
-  if (mins < 60) return `${mins} min siden`;
-  if (hours < 24) return `${hours} t siden`;
-  if (days === 1) return "i går";
-  return `${days} dager siden`;
-}
-
-function formatDateShort(iso) {
-  const d = new Date(iso);
-  return d.toLocaleDateString("nb-NO");
-}
-
-function formatDateLong(iso) {
-  const d = new Date(iso);
-  return d.toLocaleString("nb-NO", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-// Første render
-renderAds();
+    titleEl.className
