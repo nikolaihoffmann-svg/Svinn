@@ -56,7 +56,6 @@ document.querySelectorAll("[data-close-modal]").forEach((btn) => {
 
 // + KNAPP
 fabAdd.addEventListener("click", () => {
-  // reset skjema
   newAdForm.reset();
   newAdImageFiles = [];
   imagePreviewList.innerHTML = "";
@@ -94,7 +93,6 @@ newAdForm.addEventListener("submit", async (e) => {
   const location = document.getElementById("location").value.trim();
   const description = document.getElementById("description").value.trim();
 
-  // les bilder til data-URL (for demo; i produksjon -> Supabase URLer)
   const imagePromises = newAdImageFiles.map(
     (file) =>
       new Promise((resolve) => {
@@ -174,7 +172,7 @@ function renderAds() {
 
     const dateStr = formatDateShort(ad.createdAt);
     const buyerText = ad.buyer ? `selges til ${ad.buyer}` : "til salgs";
-    subtitle.textContent = `Dekk ${buyerText} · Lagt ut: ${dateStr}`.replace("Dekk ", "");
+    subtitle.textContent = `${buyerText} · Lagt ut: ${dateStr}`;
 
     left.appendChild(titleEl);
     left.appendChild(subtitle);
@@ -187,7 +185,6 @@ function renderAds() {
     header.appendChild(left);
     header.appendChild(priceEl);
 
-    // tags
     const tagRow = document.createElement("div");
     tagRow.className = "tag-row";
 
@@ -210,7 +207,6 @@ function renderAds() {
       tagRow.appendChild(locTag);
     }
 
-    // bilde
     const imgWrapper = document.createElement("div");
     imgWrapper.className = "ad-image-wrapper";
 
@@ -233,7 +229,6 @@ function renderAds() {
       imgWrapper.textContent = "Ingen bilde";
     }
 
-    // footer
     const footer = document.createElement("div");
     footer.className = "ad-footer-row";
 
@@ -300,7 +295,6 @@ function openDetailModal(ad) {
   if (ad.location) extraBits.push(`Lagerplass: ${ad.location}`);
   detailExtra.textContent = extraBits.join(" • ");
 
-  // tags
   detailTags.innerHTML = "";
   const t1 = document.createElement("span");
   t1.className = "tag-pill tag-pill-primary";
@@ -313,7 +307,6 @@ function openDetailModal(ad) {
     detailTags.appendChild(t2);
   }
 
-  // bilder / galleri
   detailThumbs.innerHTML = "";
   if (ad.images && ad.images.length) {
     detailMainImage.src = ad.images[0];
@@ -398,5 +391,5 @@ function formatDateLong(iso) {
   });
 }
 
-// Første render (tom liste)
+// Første render
 renderAds();
