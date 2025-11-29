@@ -1,47 +1,40 @@
-// Hele appen kjøres når DOM-en er klar
-window.addEventListener("DOMContentLoaded", function () {
-  var STORAGE_KEY = "ekstraverdi_ads_v1";
-  var THEME_KEY = "ekstraverdi_theme_v1";
+// Enkel, "gammeldags" JS – funker fint i Safari på iPhone
 
-  // ---- HENT ELEMENTER ----
-  var adListEl = document.getElementById("adList");
-  var viewHintEl = document.getElementById("viewHint");
+window.addEventListener("DOMContentLoaded", function () {
+  var STORAGE_KEY = "ekstraverdi_ads_v2";
+
+  var navTabs = document.querySelectorAll(".nav-tab");
+  var filterSection = document.getElementById("filterSection");
+  var contentArea = document.getElementById("contentArea");
+  var searchInput = document.getElementById("searchInput");
+  var statusChips = document.querySelectorAll("[data-status]");
   var fabAdd = document.getElementById("fabAdd");
+  var logoutBtn = document.getElementById("logoutBtn");
+
   var newAdModal = document.getElementById("newAdModal");
   var newAdForm = document.getElementById("newAdForm");
   var imagesInput = document.getElementById("images");
   var imagePreviewList = document.getElementById("newAdImagePreview");
-  var searchInput = document.getElementById("searchInput");
-  var statusChips = document.querySelectorAll("[data-filter-status]");
-  var categoryChips = document.querySelectorAll("[data-filter-category]");
-  var tabs = document.querySelectorAll(".tab");
-  var themeToggle = document.getElementById("themeToggle");
-  var logoutBtn = document.getElementById("logoutBtn");
 
   var detailModal = document.getElementById("detailModal");
   var detailTitle = document.getElementById("detailTitle");
-  var detailMeta = document.getElementById("detailMeta");
   var detailMainImage = document.getElementById("detailMainImage");
   var detailThumbs = document.getElementById("detailThumbs");
   var detailPrice = document.getElementById("detailPrice");
   var detailStatus = document.getElementById("detailStatus");
+  var detailMeta = document.getElementById("detailMeta");
   var detailDescription = document.getElementById("detailDescription");
   var detailExtra = document.getElementById("detailExtra");
   var detailTags = document.getElementById("detailTags");
 
-  // Hvis noe av dette mangler, ikke gjør noe mer (hindrer krasj)
-  if (!adListEl || !fabAdd || !newAdModal || !newAdForm) {
-    return;
-  }
-
-  var newAdImageFiles = [];
-  var filterStatus = "til-salgs";
-  var filterCategory = "alle";
+  var currentView = "sales"; // sales | admin | overview
+  var filterStatus = "til-salgs"; // til-salgs | reservert | solgt | alle
   var searchTerm = "";
-  var currentView = "sales";
+  var newAdImageFiles = [];
 
-  // ---- STORAGE ----
-  function loadAdsFromStorage() {
+  // ------- STORAGE -------
+
+  function loadAds() {
     try {
       var raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return [];
@@ -55,54 +48,16 @@ window.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  function saveAdsToStorage() {
+  function saveAds() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(ads));
-    } catch (e) {
-      // ignore
-    }
+    } catch (e) {}
   }
 
-  var ads = loadAdsFromStorage();
+  var ads = loadAds();
 
-  // ---- THEME ----
-  function applyTheme(theme) {
-    if (theme === "light") {
-      document.body.classList.add("light-theme");
-      if (themeToggle) themeToggle.textContent = "☀️";
-    } else {
-      document.body.classList.remove("light-theme");
-      if (themeToggle) themeToggle.textContent = "🌙";
-    }
-  }
+  // ------- MODAL HJELP -------
 
-  function loadTheme() {
-    try {
-      var stored = localStorage.getItem(THEME_KEY);
-      if (stored === "light" || stored === "dark") {
-        applyTheme(stored);
-      } else {
-        applyTheme("dark");
-      }
-    } catch (e) {
-      applyTheme("dark");
-    }
-  }
-
-  if (themeToggle) {
-    themeToggle.addEventListener("click", function () {
-      var isLight = document.body.classList.contains("light-theme");
-      var next = isLight ? "dark" : "light";
-      applyTheme(next);
-      try {
-        localStorage.setItem(THEME_KEY, next);
-      } catch (e) {}
-    });
-  }
-
-  loadTheme();
-
-  // ---- MODAL HJELP ----
   function openModal(el) {
     if (!el) return;
     el.classList.add("show");
@@ -113,89 +68,110 @@ window.addEventListener("DOMContentLoaded", function () {
     el.classList.remove("show");
   }
 
-  var closeButtons = document.querySelectorAll("[data-close-modal]");
-  for (var i = 0; i < closeButtons.length; i++) {
+  var closeBtns = document.querySelectorAll("[data-close-modal]");
+  for (var i = 0; i < closeBtns.length; i++) {
     (function (btn) {
       btn.addEventListener("click", function () {
         var modal = btn.closest(".modal-backdrop");
         closeModal(modal);
       });
-    })(closeButtons[i]);
+    })(closeBtns[i]);
   }
 
-  var modals = [newAdModal, detailModal];
-  for (var m = 0; m < modals.length; m++) {
-    (function (modal) {
-      if (!modal) return;
-      modal.addEventListener("click", function (e) {
-        if (e.target === modal) {
-          closeModal(modal);
-        }
-      });
-    })(modals[m]);
-  }
+  [newAdModal, detailModal].forEach(function (modal) {
+    if (!modal) return;
+    modal.addEventListener("click", function (e) {
+      if (e.target === modal) {
+        closeModal(modal);
+      }
+    });
+  });
 
-  // ---- TABS ----
-  function updateViewHint() {
-    if (!viewHintEl) return;
-    if (currentView === "sales") {
-      viewHintEl.textContent = "";
-    } else if (currentView === "admin") {
-      viewHintEl.textContent =
-        "Adminvisning (samme liste nå, senere kan vi legge til redigering/sletting).";
-    } else if (currentView === "overview") {
-      viewHintEl.textContent = "Oversikt (kommer senere, viser samme liste nå).";
-    } else if (currentView === "requests") {
-      viewHintEl.textContent = "Forespørsler (kommer senere, viser samme liste nå).";
+  // ------- VIEW-BYTTER -------
+
+  function setView(view) {
+    currentView = view;
+    for (var i = 0; i < navTabs.length; i++) {
+      navTabs[i].classList.remove("nav-tab-active");
+      if (navTabs[i].getAttribute("data-view") === view) {
+        navTabs[i].classList.add("nav-tab-active");
+      }
     }
+
+    // Filterlinja brukes kun på sales + admin
+    if (view === "overview") {
+      filterSection.style.display = "none";
+    } else {
+      filterSection.style.display = "";
+    }
+
+    renderCurrentView();
   }
 
-  for (var t = 0; t < tabs.length; t++) {
+  for (var t = 0; t < navTabs.length; t++) {
     (function (tab) {
       tab.addEventListener("click", function () {
-        for (var j = 0; j < tabs.length; j++) {
-          tabs[j].classList.remove("active");
-        }
-        tab.classList.add("active");
-        currentView = tab.getAttribute("data-view") || "sales";
-        updateViewHint();
-        renderAds();
+        var view = tab.getAttribute("data-view");
+        setView(view);
       });
-    })(tabs[t]);
+    })(navTabs[t]);
   }
 
-  // ---- LOGG UT ----
+  // ------- FILTER -------
+
+  if (searchInput) {
+    searchInput.addEventListener("input", function () {
+      searchTerm = searchInput.value;
+      renderCurrentView();
+    });
+  }
+
+  for (var s = 0; s < statusChips.length; s++) {
+    (function (chip) {
+      chip.addEventListener("click", function () {
+        for (var j = 0; j < statusChips.length; j++) {
+          statusChips[j].classList.remove("filter-chip-active");
+        }
+        chip.classList.add("filter-chip-active");
+        filterStatus = chip.getAttribute("data-status");
+        renderCurrentView();
+      });
+    })(statusChips[s]);
+  }
+
+  // ------- FAB: NY ANNONSE -------
+
+  fabAdd.addEventListener("click", function () {
+    newAdForm.reset();
+    newAdImageFiles = [];
+    imagePreviewList.innerHTML = "";
+    openModal(newAdModal);
+  });
+
+  // ------- LOGG UT / NULLSTILL -------
+
   if (logoutBtn) {
     logoutBtn.addEventListener("click", function () {
-      if (window.confirm("Vil du tømme alle annonser (demo-logg ut)?")) {
+      if (window.confirm("Slette alle lagrede annonser på denne enheten?")) {
         ads = [];
-        saveAdsToStorage();
-        renderAds();
-        window.alert("Lokale annonser er slettet.");
+        saveAds();
+        renderCurrentView();
       }
     });
   }
 
-  // ---- + KNAPP ----
-  fabAdd.addEventListener("click", function () {
-    newAdForm.reset();
-    newAdImageFiles = [];
-    if (imagePreviewList) imagePreviewList.innerHTML = "";
-    openModal(newAdModal);
-  });
+  // ------- BILDEPREVIEW -------
 
-  // ---- BILDEPREVIEW ----
   if (imagesInput) {
     imagesInput.addEventListener("change", function () {
       var files = Array.prototype.slice.call(imagesInput.files || []);
       newAdImageFiles = files;
-      if (imagePreviewList) imagePreviewList.innerHTML = "";
+      imagePreviewList.innerHTML = "";
 
       for (var i = 0; i < files.length; i++) {
         (function (file) {
           var reader = new FileReader();
           reader.onload = function (e) {
-            if (!imagePreviewList) return;
             var div = document.createElement("div");
             div.className = "image-preview-item";
             var img = document.createElement("img");
@@ -209,23 +185,17 @@ window.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // ---- NY ANNONSE ----
+  // ------- NY ANNONSE SUBMIT -------
+
   newAdForm.addEventListener("submit", function (e) {
     e.preventDefault();
 
-    var titleEl = document.getElementById("title");
-    var priceEl = document.getElementById("price");
-    var buyerEl = document.getElementById("buyer");
-    var categoryEl = document.getElementById("category");
-    var locationEl = document.getElementById("location");
-    var descEl = document.getElementById("description");
-
-    var title = titleEl ? titleEl.value.trim() : "";
-    var priceVal = priceEl ? priceEl.value.trim() : "";
-    var buyer = buyerEl ? buyerEl.value.trim() : "";
-    var category = categoryEl ? categoryEl.value.trim() : "";
-    var locationVal = locationEl ? locationEl.value.trim() : "";
-    var description = descEl ? descEl.value.trim() : "";
+    var title = document.getElementById("title").value.trim();
+    var priceVal = document.getElementById("price").value.trim();
+    var buyer = document.getElementById("buyer").value.trim();
+    var category = document.getElementById("category").value.trim();
+    var locationVal = document.getElementById("location").value.trim();
+    var description = document.getElementById("description").value.trim();
 
     var promises = [];
     for (var i = 0; i < newAdImageFiles.length; i++) {
@@ -251,71 +221,54 @@ window.addEventListener("DOMContentLoaded", function () {
         category: category || null,
         description: description || "",
         location: locationVal || null,
-        status: "til-salgs",
+        status: "til-salgs", // start alltid som til salgs
         images: images,
         createdAt: new Date().toISOString()
       };
 
       ads.unshift(ad);
-      saveAdsToStorage();
+      saveAds();
       closeModal(newAdModal);
-      renderAds();
+      setView("sales");
     });
   });
 
-  // ---- FILTRE ----
-  for (var i = 0; i < statusChips.length; i++) {
-    (function (chip) {
-      chip.addEventListener("click", function () {
-        for (var j = 0; j < statusChips.length; j++) {
-          statusChips[j].classList.remove("chip-active");
-        }
-        chip.classList.add("chip-active");
-        filterStatus = chip.getAttribute("data-filter-status");
-        renderAds();
-      });
-    })(statusChips[i]);
+  // ------- HJELPEFUNKSJONER -------
+
+  function timeAgo(iso) {
+    var d = new Date(iso);
+    var diffMs = Date.now() - d.getTime();
+    var mins = Math.floor(diffMs / 60000);
+    var hours = Math.floor(mins / 60);
+    var days = Math.floor(hours / 24);
+    if (mins < 1) return "akkurat nå";
+    if (mins < 60) return mins + " min siden";
+    if (hours < 24) return hours + " t siden";
+    if (days === 1) return "i går";
+    return days + " dager siden";
   }
 
-  for (var i2 = 0; i2 < categoryChips.length; i2++) {
-    (function (chip) {
-      chip.addEventListener("click", function () {
-        for (var j = 0; j < categoryChips.length; j++) {
-          categoryChips[j].classList.remove("chip-active");
-        }
-        chip.classList.add("chip-active");
-        filterCategory = chip.getAttribute("data-filter-category");
-        renderAds();
-      });
-    })(categoryChips[i2]);
-  }
-
-  if (searchInput) {
-    searchInput.addEventListener("input", function () {
-      searchTerm = searchInput.value;
-      renderAds();
+  function formatDateLong(iso) {
+    var d = new Date(iso);
+    return d.toLocaleString("nb-NO", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
     });
   }
 
-  // ---- RENDER LISTE ----
-  function renderAds() {
-    if (!adListEl) return;
+  function formatCurrency(n) {
+    return n.toLocaleString("nb-NO") + " kr";
+  }
 
-    adListEl.innerHTML = "";
-
-    var filtered = [];
+  function filterAdsForList() {
+    var result = [];
     for (var i = 0; i < ads.length; i++) {
       var ad = ads[i];
-      if (filterStatus !== "alle" && ad.status !== filterStatus) continue;
 
-      if (filterCategory !== "alle") {
-        if (
-          !ad.category ||
-          ad.category.toLowerCase() !== filterCategory.toLowerCase()
-        ) {
-          continue;
-        }
-      }
+      if (filterStatus !== "alle" && ad.status !== filterStatus) continue;
 
       if (searchTerm) {
         var text =
@@ -326,179 +279,277 @@ window.addEventListener("DOMContentLoaded", function () {
           (ad.category || "") +
           " " +
           (ad.location || "");
-        if (text.toLowerCase().indexOf(searchTerm.toLowerCase()) === -1) {
-          continue;
-        }
+        if (text.toLowerCase().indexOf(searchTerm.toLowerCase()) === -1) continue;
       }
 
-      filtered.push(ad);
+      result.push(ad);
     }
+    return result;
+  }
 
-    if (!filtered.length) {
-      adListEl.innerHTML =
-        '<p class="help-text">Ingen annonser som matcher filtrene ennå.</p>';
+  // ------- RENDER LISTE (SALES + ADMIN) -------
+
+  function renderList(isAdmin) {
+    var list = filterAdsForList();
+
+    if (!list.length) {
+      contentArea.innerHTML =
+        '<p class="help-text">Ingen annonser som matcher filtrene.</p>';
       return;
     }
 
-    for (var k = 0; k < filtered.length; k++) {
+    contentArea.innerHTML = "";
+    for (var i = 0; i < list.length; i++) {
       (function (ad) {
         var card = document.createElement("article");
         card.className = "ad-card";
 
-        var header = document.createElement("div");
-        header.className = "ad-header-row";
+        // Bilde
+        var thumb = document.createElement("div");
+        thumb.className = "ad-thumb";
+        if (ad.images && ad.images.length) {
+          var img = document.createElement("img");
+          img.src = ad.images[0];
+          img.alt = ad.title;
+          thumb.appendChild(img);
+        }
+        card.appendChild(thumb);
 
-        var left = document.createElement("div");
+        // Info
+        var info = document.createElement("div");
+        info.className = "ad-info";
+
+        var titleRow = document.createElement("div");
+        titleRow.className = "ad-title-row";
+
         var titleEl = document.createElement("div");
         titleEl.className = "ad-title";
         titleEl.textContent = ad.title;
 
-        var subtitle = document.createElement("div");
-        subtitle.className = "ad-subtitle";
-        var dateStr = formatDateShort(ad.createdAt);
-        var buyerText = ad.buyer ? "selges til " + ad.buyer : "til salgs";
-        subtitle.textContent = buyerText + " · Lagt ut: " + dateStr;
-
-        left.appendChild(titleEl);
-        left.appendChild(subtitle);
-
         var priceEl = document.createElement("div");
         priceEl.className = "ad-price";
         priceEl.textContent =
-          ad.price != null ? ad.price.toLocaleString("nb-NO") + " kr" : "Gi bud";
+          ad.price != null ? formatCurrency(ad.price) : "Gi bud";
 
-        header.appendChild(left);
-        header.appendChild(priceEl);
+        titleRow.appendChild(titleEl);
+        titleRow.appendChild(priceEl);
 
-        var tagRow = document.createElement("div");
-        tagRow.className = "tag-row";
+        var meta = document.createElement("div");
+        meta.className = "ad-meta";
+        var statusText =
+          ad.status === "til-salgs"
+            ? "til salgs"
+            : ad.status === "reservert"
+            ? "reservert"
+            : "solgt";
+        meta.textContent =
+          statusText + " · Lagt ut: " + formatDateLong(ad.createdAt);
 
-        var statusTag = document.createElement("span");
-        statusTag.className = "tag-pill tag-pill-primary";
-        statusTag.textContent = ad.status === "til-salgs" ? "Til salgs" : "Solgt";
-        tagRow.appendChild(statusTag);
+        var tags = document.createElement("div");
+        tags.className = "ad-tags";
+
+        var stTag = document.createElement("span");
+        stTag.className =
+          "tag-pill tag-pill-status-" + ad.status.replace(" ", "-");
+        stTag.textContent =
+          ad.status === "til-salgs"
+            ? "Til salgs"
+            : ad.status === "reservert"
+            ? "Reservert"
+            : "Solgt";
+        tags.appendChild(stTag);
 
         if (ad.category) {
           var catTag = document.createElement("span");
           catTag.className = "tag-pill";
           catTag.textContent = ad.category;
-          tagRow.appendChild(catTag);
+          tags.appendChild(catTag);
         }
 
         if (ad.location) {
           var locTag = document.createElement("span");
           locTag.className = "tag-pill";
           locTag.textContent = ad.location;
-          tagRow.appendChild(locTag);
-        }
-
-        var imgWrapper = document.createElement("div");
-        imgWrapper.className = "ad-image-wrapper";
-        imgWrapper.style.height = "160px";
-        imgWrapper.style.maxHeight = "160px";
-
-        if (ad.images && ad.images.length) {
-          var img = document.createElement("img");
-          img.src = ad.images[0];
-          img.alt = ad.title;
-          img.style.width = "100%";
-          img.style.height = "100%";
-          img.style.objectFit = "cover";
-          imgWrapper.appendChild(img);
-
-          if (ad.images.length > 1) {
-            var count = document.createElement("div");
-            count.className = "ad-image-count";
-            count.textContent = "+" + (ad.images.length - 1);
-            imgWrapper.appendChild(count);
-          }
-        } else {
-          imgWrapper.style.display = "flex";
-          imgWrapper.style.alignItems = "center";
-          imgWrapper.style.justifyContent = "center";
-          imgWrapper.textContent = "Ingen bilde";
+          tags.appendChild(locTag);
         }
 
         var footer = document.createElement("div");
-        footer.className = "ad-footer-row";
+        footer.className = "ad-footer";
 
         var footerLeft = document.createElement("div");
         footerLeft.className = "ad-footer-left";
 
         var btnDetails = document.createElement("button");
-        btnDetails.className = "btn-small btn-small-primary";
         btnDetails.type = "button";
+        btnDetails.className = "btn-link";
         btnDetails.textContent = "Detaljer";
         btnDetails.addEventListener("click", function () {
-          openDetailModal(ad);
-        });
-
-        var btnShare = document.createElement("button");
-        btnShare.className = "btn-small btn-small-secondary";
-        btnShare.type = "button";
-        btnShare.textContent = "Del lenke";
-        btnShare.addEventListener("click", function () {
-          if (navigator.share) {
-            navigator
-              .share({
-                title: ad.title,
-                text: "Sjekk ut denne tingen på EkstraVerdi",
-                url: window.location.href
-              })
-              .catch(function () {});
-          } else {
-            window.alert("Kopier lenken i adressefeltet for å dele 🙂");
-          }
+          openDetail(ad);
         });
 
         footerLeft.appendChild(btnDetails);
-        footerLeft.appendChild(btnShare);
+
+        if (!isAdmin) {
+          var btnShare = document.createElement("button");
+          btnShare.type = "button";
+          btnShare.className = "btn-link";
+          btnShare.textContent = "Del lenke";
+          btnShare.addEventListener("click", function () {
+            shareAd(ad);
+          });
+          footerLeft.appendChild(btnShare);
+        }
 
         var timeEl = document.createElement("div");
-        timeEl.className = "ad-time";
+        timeEl.className = "time-ago";
         timeEl.textContent = timeAgo(ad.createdAt);
 
         footer.appendChild(footerLeft);
         footer.appendChild(timeEl);
 
-        card.appendChild(header);
-        card.appendChild(tagRow);
-        card.appendChild(imgWrapper);
-        card.appendChild(footer);
+        info.appendChild(titleRow);
+        info.appendChild(meta);
+        info.appendChild(tags);
+        info.appendChild(footer);
 
-        adListEl.appendChild(card);
-      })(filtered[k]);
+        if (isAdmin) {
+          var adminControls = document.createElement("div");
+          adminControls.className = "admin-controls";
+
+          var statusSelect = document.createElement("select");
+          statusSelect.className = "admin-status-select";
+          var options = [
+            { value: "til-salgs", label: "Til salgs" },
+            { value: "reservert", label: "Reservert" },
+            { value: "solgt", label: "Solgt" }
+          ];
+          for (var o = 0; o < options.length; o++) {
+            var opt = document.createElement("option");
+            opt.value = options[o].value;
+            opt.textContent = options[o].label;
+            if (options[o].value === ad.status) opt.selected = true;
+            statusSelect.appendChild(opt);
+          }
+          statusSelect.addEventListener("change", function () {
+            ad.status = statusSelect.value;
+            saveAds();
+            renderCurrentView();
+          });
+
+          var deleteBtn = document.createElement("button");
+          deleteBtn.type = "button";
+          deleteBtn.className = "btn-small-danger";
+          deleteBtn.textContent = "Slett";
+          deleteBtn.addEventListener("click", function () {
+            if (window.confirm("Slette denne annonsen?")) {
+              ads = ads.filter(function (a) {
+                return a.id !== ad.id;
+              });
+              saveAds();
+              renderCurrentView();
+            }
+          });
+
+          adminControls.appendChild(statusSelect);
+          adminControls.appendChild(deleteBtn);
+
+          info.appendChild(adminControls);
+        }
+
+        card.appendChild(info);
+        contentArea.appendChild(card);
+      })(list[i]);
     }
   }
 
-  // ---- DETALJMODAL ----
-  function openDetailModal(ad) {
-    if (!detailModal) return;
+  // ------- OVERSIKT -------
 
+  function renderOverview() {
+    var totalCount = ads.length;
+    var sumTilSalgs = 0;
+    var sumReservert = 0;
+    var sumSolgt = 0;
+    var countReservert = 0;
+
+    for (var i = 0; i < ads.length; i++) {
+      var ad = ads[i];
+      if (ad.price == null) continue;
+
+      if (ad.status === "til-salgs") {
+        sumTilSalgs += ad.price;
+      } else if (ad.status === "reservert") {
+        sumReservert += ad.price;
+        countReservert++;
+      } else if (ad.status === "solgt") {
+        sumSolgt += ad.price;
+      }
+    }
+
+    var html = "";
+    html += '<div class="overview-grid">';
+    html += '<div class="overview-card">';
+    html += '<div class="overview-title">Totalt antall annonser</div>';
+    html += '<div class="overview-value">' + totalCount + "</div>";
+    html += "</div>";
+
+    html += '<div class="overview-card">';
+    html += '<div class="overview-title">Verdi til salgs</div>';
+    html +=
+      '<div class="overview-value">' +
+      formatCurrency(sumTilSalgs) +
+      "</div>";
+    html += '<div class="overview-sub">Prisfeltet må være fylt inn</div>';
+    html += "</div>";
+
+    html += '<div class="overview-card">';
+    html += '<div class="overview-title">Reserverte ordre</div>';
+    html += '<div class="overview-value">' + countReservert + "</div>";
+    html +=
+      '<div class="overview-sub">Sum pris: ' +
+      formatCurrency(sumReservert) +
+      "</div>";
+    html += "</div>";
+
+    html += '<div class="overview-card">';
+    html += '<div class="overview-title">Totalt tjent (solgt)</div>';
+    html +=
+      '<div class="overview-value">' + formatCurrency(sumSolgt) + "</div>";
+    html += "</div>";
+
+    html += "</div>";
+
+    contentArea.innerHTML = html;
+  }
+
+  // ------- DETALJMODAL -------
+
+  function openDetail(ad) {
     detailTitle.textContent = ad.title;
     detailPrice.textContent =
-      ad.price != null ? ad.price.toLocaleString("nb-NO") + " kr" : "Gi bud";
-    detailStatus.textContent = ad.status === "til-salgs" ? "Til salgs" : "Solgt";
+      ad.price != null ? formatCurrency(ad.price) : "Gi bud";
+
+    detailStatus.textContent =
+      ad.status === "til-salgs"
+        ? "Til salgs"
+        : ad.status === "reservert"
+        ? "Reservert"
+        : "Solgt";
+
+    detailMeta.textContent = "Lagt ut " + formatDateLong(ad.createdAt);
     detailDescription.textContent =
       ad.description || "Ingen beskrivelse lagt inn.";
 
-    var extraBits = [];
-    if (ad.buyer) extraBits.push("Kjøper: " + ad.buyer);
-    if (ad.location) extraBits.push("Lagerplass: " + ad.location);
-    detailExtra.textContent = extraBits.join(" • ");
-
-    detailMeta.textContent = "Lagt ut " + formatDateLong(ad.createdAt);
+    var extraParts = [];
+    if (ad.buyer) extraParts.push("Kjøper: " + ad.buyer);
+    if (ad.location) extraParts.push("Lagerplass: " + ad.location);
+    detailExtra.textContent = extraParts.join(" • ");
 
     detailTags.innerHTML = "";
-    var t1 = document.createElement("span");
-    t1.className = "tag-pill tag-pill-primary";
-    t1.textContent = ad.status === "til-salgs" ? "Til salgs" : "Solgt";
-    detailTags.appendChild(t1);
     if (ad.category) {
-      var t2 = document.createElement("span");
-      t2.className = "tag-pill";
-      t2.textContent = ad.category;
-      detailTags.appendChild(t2);
+      var tag = document.createElement("span");
+      tag.className = "tag-pill";
+      tag.textContent = ad.category;
+      detailTags.appendChild(tag);
     }
 
     detailThumbs.innerHTML = "";
@@ -516,8 +567,8 @@ window.addEventListener("DOMContentLoaded", function () {
           btn.addEventListener("click", function () {
             detailMainImage.src = src;
             var children = detailThumbs.children;
-            for (var c = 0; c < children.length; c++) {
-              children[c].classList.remove("active");
+            for (var j = 0; j < children.length; j++) {
+              children[j].classList.remove("active");
             }
             btn.classList.add("active");
           });
@@ -531,38 +582,32 @@ window.addEventListener("DOMContentLoaded", function () {
     openModal(detailModal);
   }
 
-  // ---- HJELPEFUNKSJONER ----
-  function timeAgo(iso) {
-    var d = new Date(iso);
-    var diffMs = Date.now() - d.getTime();
-    var mins = Math.floor(diffMs / 60000);
-    var hours = Math.floor(mins / 60);
-    var days = Math.floor(hours / 24);
-
-    if (mins < 1) return "akkurat nå";
-    if (mins < 60) return mins + " min siden";
-    if (hours < 24) return hours + " t siden";
-    if (days === 1) return "i går";
-    return days + " dager siden";
+  function shareAd(ad) {
+    if (navigator.share) {
+      navigator
+        .share({
+          title: ad.title,
+          text: "Sjekk denne annonsen",
+          url: window.location.href
+        })
+        .catch(function () {});
+    } else {
+      window.alert("Kopier lenken i adressefeltet for å dele.");
+    }
   }
 
-  function formatDateShort(iso) {
-    var d = new Date(iso);
-    return d.toLocaleDateString("nb-NO");
+  // ------- RENDER CURRENT VIEW -------
+
+  function renderCurrentView() {
+    if (currentView === "overview") {
+      renderOverview();
+    } else if (currentView === "admin") {
+      renderList(true);
+    } else {
+      renderList(false);
+    }
   }
 
-  function formatDateLong(iso) {
-    var d = new Date(iso);
-    return d.toLocaleString("nb-NO", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit"
-    });
-  }
-
-  // ---- INIT ----
-  updateViewHint();
-  renderAds();
+  // INIT
+  setView("sales");
 });
