@@ -217,7 +217,7 @@ body {
   gap: 12px;
 }
 
-/* Annonsekort – likt som screenshot */
+/* Annonsekort – matcher app-stilen din */
 .ad-card {
   background: radial-gradient(circle at top left, #050b18 0, #020617 55%);
   border-radius: 22px;
@@ -276,7 +276,7 @@ body {
   color: #bbf7d0;
 }
 
-/* BILDE – NØKKELEN: LITE OG FAST HØYDE */
+/* BILDE I LISTA – NØKKELEN: FAST LAV HØYDE */
 
 .ad-image-wrapper {
   margin-top: 6px;
@@ -284,21 +284,16 @@ body {
   overflow: hidden;
   position: relative;
   background: #020617;
-  /* Her bestemmer vi HVOR høy bildet blir i feeden */
-  max-height: 210px;
-  height: 210px;
+  /* Høyden på bildet i feeden */
+  height: 160px !important;
+  max-height: 160px !important;
 }
 
-@media (min-width: 768px) {
-  .ad-image-wrapper {
-    height: 190px;
-  }
-}
-
+/* Sørg for at bildet fyller ramma og ikke styrer høyden */
 .ad-image-wrapper img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover; /* Hovedtrikset: fyll ramma, ikke strekk */
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
   display: block;
 }
 
