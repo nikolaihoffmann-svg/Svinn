@@ -1,217 +1,684 @@
-const STORAGE_KEY = "ekstraverdi_ads_v1";
+:root {
+  --bg: #020617;
+  --bg-elevated: #050b18;
+  --bg-elevated-soft: #071021;
+  --bg-chip: #0b1220;
+  --bg-chip-active: #f97316;
+  --bg-pill-light: #f9fafb;
 
-// LAST / LAGRE I LOCALSTORAGE
-function loadAdsFromStorage() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
+  --text: #e5e7eb;
+  --text-soft: #9ca3af;
+  --text-softer: #6b7280;
+  --text-dark: #020617;
+
+  --accent: #f97316;
+  --accent-soft: rgba(249, 115, 22, 0.2);
+
+  --border-soft: rgba(148, 163, 184, 0.25);
+
+  --radius-lg: 20px;
+  --radius-md: 14px;
+  --radius-pill: 999px;
+
+  --shadow-soft: 0 18px 40px rgba(0, 0, 0, 0.6);
+
+  --transition-fast: 0.2s ease-out;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+  background: radial-gradient(circle at top, #020617 0, #000 60%);
+  color: var(--text);
+}
+
+body {
+  min-height: 100vh;
+}
+
+.app {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 16px 12px 32px;
+}
+
+/* TOPP */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 14px;
+  border-radius: 24px;
+  background: radial-gradient(circle at top left, #0b1220 0, #020617 55%, #000 100%);
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  box-shadow: var(--shadow-soft);
+  margin-bottom: 12px;
+  gap: 12px;
+}
+
+.topbar-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.app-title {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.app-name {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  color: #f97316;
+}
+
+.app-icon {
+  font-size: 18px;
+}
+
+.app-tagline {
+  font-size: 11px;
+  color: var(--text-soft);
+}
+
+.topbar-right {
+  display: flex;
+  gap: 8px;
+}
+
+.pill {
+  border-radius: var(--radius-pill);
+  padding: 5px 12px;
+  font-size: 12px;
+  border: 1px solid var(--border-soft);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: transparent;
+  color: var(--text);
+}
+
+.pill-ghost {
+  background: rgba(15, 23, 42, 0.9);
+}
+
+.pill-light {
+  background: var(--bg-pill-light);
+  color: var(--text-dark);
+}
+
+/* TABS */
+
+.tabs {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.tab {
+  border-radius: var(--radius-pill);
+  padding: 6px 12px;
+  font-size: 12px;
+  border: none;
+  background: #020617;
+  color: var(--text-soft);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.tab.active {
+  background: var(--bg-pill-light);
+  color: var(--text-dark);
+}
+
+/* SØK / FILTER */
+
+.search-section {
+  margin-bottom: 8px;
+}
+
+.search-wrapper {
+  position: relative;
+}
+
+.search-input {
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid var(--border-soft);
+  background: #020617;
+  color: var(--text);
+  font-size: 13px;
+  padding: 9px 12px;
+}
+
+.search-input::placeholder {
+  color: var(--text-softer);
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.chip-group {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.chip {
+  border-radius: var(--radius-pill);
+  padding: 4px 11px;
+  font-size: 11px;
+  border: none;
+  background: var(--bg-chip);
+  color: var(--text-soft);
+  cursor: pointer;
+}
+
+.chip-outline {
+  border: 1px solid rgba(55, 65, 81, 0.8);
+  background: transparent;
+}
+
+.chip-active {
+  background: var(--bg-chip-active);
+  color: var(--text-dark);
+}
+
+/* HINT for aktiv view */
+
+.view-hint {
+  font-size: 11px;
+  color: var(--text-softer);
+  margin-bottom: 4px;
+}
+
+/* LISTE / KORT */
+
+.content {
+  margin-top: 8px;
+}
+
+.ad-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Annonsekort */
+
+.ad-card {
+  background: radial-gradient(circle at top left, #050b18 0, #020617 55%);
+  border-radius: 22px;
+  border: 1px solid rgba(31, 41, 55, 0.9);
+  padding: 12px 12px 10px;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.75);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ad-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.ad-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.ad-subtitle {
+  font-size: 11px;
+  color: var(--text-soft);
+}
+
+.ad-price {
+  font-size: 16px;
+  font-weight: 700;
+  color: #fbbf24;
+}
+
+/* PILLS / TAGS */
+
+.tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.tag-pill {
+  border-radius: var(--radius-pill);
+  font-size: 10px;
+  padding: 3px 8px;
+  background: #020617;
+  color: var(--text-soft);
+  border: 1px solid rgba(55, 65, 81, 0.9);
+}
+
+.tag-pill-primary {
+  background: rgba(34, 197, 94, 0.12);
+  border-color: rgba(34, 197, 94, 0.7);
+  color: #bbf7d0;
+}
+
+/* BILDE I LISTA – liten og låst høyde */
+
+.ad-image-wrapper {
+  margin-top: 6px;
+  border-radius: 18px;
+  overflow: hidden;
+  position: relative;
+  background: #020617;
+  height: 160px !important;
+  max-height: 160px !important;
+}
+
+/* Bildet får ikke bestemme størrelsen selv */
+.ad-image-wrapper img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  display: block;
+}
+
+/* teller for flere bilder */
+.ad-image-count {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 11px;
+  background: rgba(15, 23, 42, 0.85);
+  color: var(--text-soft);
+  border: 1px solid rgba(148, 163, 184, 0.7);
+}
+
+/* FOOTER PÅ KORTET */
+
+.ad-footer-row {
+  margin-top: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.ad-footer-left {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-small {
+  border-radius: var(--radius-pill);
+  padding: 5px 12px;
+  font-size: 11px;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-small-primary {
+  background: #f9fafb;
+  color: #020617;
+}
+
+.btn-small-secondary {
+  background: #020617;
+  color: var(--text-soft);
+  border: 1px solid rgba(55, 65, 81, 0.9);
+}
+
+.ad-time {
+  font-size: 10px;
+  color: var(--text-softer);
+}
+
+/* FAB (+) */
+
+.fab {
+  position: fixed;
+  right: 18px;
+  bottom: 24px;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  font-size: 28px;
+  font-weight: 500;
+  background: radial-gradient(circle at top left, #fed7aa 0, #f97316 40%, #b45309 100%);
+  color: #111827;
+  box-shadow: 0 22px 45px rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+}
+
+/* MODALER */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 30;
+}
+
+.modal-backdrop.show {
+  display: flex;
+}
+
+.modal-panel {
+  width: 100%;
+  max-width: 540px;
+  background: #020617;
+  border-radius: 22px;
+  border: 1px solid rgba(148, 163, 184, 0.6);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.9);
+  padding: 14px 14px 14px;
+}
+
+.modal-panel-large {
+  max-width: 900px;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.modal-header h2 {
+  font-size: 17px;
+}
+
+.modal-close {
+  border-radius: 999px;
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba(55, 65, 81, 0.9);
+  background: #020617;
+  color: var(--text-soft);
+  cursor: pointer;
+}
+
+/* FORM */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form-row label {
+  font-size: 12px;
+  color: var(--text-soft);
+}
+
+.form-row input,
+.form-row textarea {
+  border-radius: 12px;
+  border: 1px solid var(--border-soft);
+  background: #020617;
+  color: var(--text);
+  font-size: 13px;
+  padding: 7px 10px;
+}
+
+.form-row input::placeholder,
+.form-row textarea::placeholder {
+  color: var(--text-softer);
+}
+
+.help-text {
+  font-size: 11px;
+  color: var(--text-softer);
+  margin-top: 2px;
+}
+
+.image-preview-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.image-preview-item {
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(55, 65, 81, 0.9);
+}
+
+.image-preview-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* MODAL FOOTER */
+
+.modal-footer {
+  margin-top: 10px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.btn {
+  border-radius: var(--radius-pill);
+  padding: 7px 14px;
+  font-size: 13px;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #f97316, #fb923c);
+  color: #111827;
+}
+
+.btn-secondary {
+  background: #020617;
+  color: var(--text-soft);
+  border: 1px solid rgba(55, 65, 81, 0.9);
+}
+
+/* DETALJMODAL */
+
+.detail-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+@media (min-width: 800px) {
+  .detail-layout {
+    flex-direction: row;
   }
 }
 
-function saveAdsToStorage() {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(ads));
-  } catch {
-    // ignorér
-  }
+.detail-gallery {
+  flex: 1.2;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-// "Database" i minne
-let ads = loadAdsFromStorage();
-
-// ELEMENTER
-const adListEl = document.getElementById("adList");
-const viewHintEl = document.getElementById("viewHint");
-const fabAdd = document.getElementById("fabAdd");
-const newAdModal = document.getElementById("newAdModal");
-const newAdForm = document.getElementById("newAdForm");
-const imagesInput = document.getElementById("images");
-const imagePreviewList = document.getElementById("newAdImagePreview");
-
-const searchInput = document.getElementById("searchInput");
-const statusChips = document.querySelectorAll("[data-filter-status]");
-const categoryChips = document.querySelectorAll("[data-filter-category]");
-const tabs = document.querySelectorAll(".tab");
-
-// detaljmodal
-const detailModal = document.getElementById("detailModal");
-const detailTitle = document.getElementById("detailTitle");
-const detailMeta = document.getElementById("detailMeta");
-const detailMainImage = document.getElementById("detailMainImage");
-const detailThumbs = document.getElementById("detailThumbs");
-const detailPrice = document.getElementById("detailPrice");
-const detailStatus = document.getElementById("detailStatus");
-const detailDescription = document.getElementById("detailDescription");
-const detailExtra = document.getElementById("detailExtra");
-const detailTags = document.getElementById("detailTags");
-
-let newAdImageFiles = [];
-let filterStatus = "til-salgs";
-let filterCategory = "alle";
-let searchTerm = "";
-let currentView = "sales";
-
-// HJELP: vis modal
-function openModal(el) {
-  el.classList.add("show");
+.detail-main-image {
+  border-radius: 18px;
+  overflow: hidden;
+  background: radial-gradient(circle at top, #111827, #020617 60%);
+  max-height: 320px;
 }
 
-function closeModal(el) {
-  el.classList.remove("show");
+.detail-main-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
-// LUKK MED [data-close-modal]
-document.querySelectorAll("[data-close-modal]").forEach((btn) => {
-  btn.addEventListener("click", () => {
-    const modal = btn.closest(".modal-backdrop");
-    if (modal) closeModal(modal);
-  });
-});
-
-// Klikk bakgrunn lukker også
-[newAdModal, detailModal].forEach((modal) => {
-  modal.addEventListener("click", (e) => {
-    if (e.target === modal) closeModal(modal);
-  });
-});
-
-// TABS – gjør at Liste (admin) osv faktisk synes å fungere
-tabs.forEach((tab) => {
-  tab.addEventListener("click", () => {
-    tabs.forEach((t) => t.classList.remove("active"));
-    tab.classList.add("active");
-    currentView = tab.dataset.view || "sales";
-    updateViewHint();
-    renderAds();
-  });
-});
-
-function updateViewHint() {
-  if (currentView === "sales") {
-    viewHintEl.textContent = "";
-  } else if (currentView === "admin") {
-    viewHintEl.textContent =
-      "Adminvisning (foreløpig samme liste, senere kan vi legge til redigering/sletting osv).";
-  } else if (currentView === "overview") {
-    viewHintEl.textContent = "Oversikt kommer – foreløpig viser vi samme liste.";
-  } else if (currentView === "requests") {
-    viewHintEl.textContent = "Forespørsler kommer – foreløpig viser vi samme liste.";
-  }
+.detail-thumbs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 4px;
 }
 
-// + KNAPP
-fabAdd.addEventListener("click", () => {
-  newAdForm.reset();
-  newAdImageFiles = [];
-  imagePreviewList.innerHTML = "";
-  openModal(newAdModal);
-});
+.detail-thumb {
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(55, 65, 81, 0.9);
+  flex-shrink: 0;
+  width: 60px;
+  height: 60px;
+  cursor: pointer;
+  opacity: 0.8;
+}
 
-// BILDER I NY ANNONSE
-imagesInput.addEventListener("change", () => {
-  const files = Array.from(imagesInput.files || []);
-  newAdImageFiles = files;
-  imagePreviewList.innerHTML = "";
+.detail-thumb.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+  opacity: 1;
+}
 
-  files.forEach((file) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const div = document.createElement("div");
-      div.className = "image-preview-item";
-      const img = document.createElement("img");
-      img.src = e.target.result;
-      div.appendChild(img);
-      imagePreviewList.appendChild(div);
-    };
-    reader.readAsDataURL(file);
-  });
-});
+.detail-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 
-// LAGRE NY ANNONSE
-newAdForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
+.detail-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
 
-  const title = document.getElementById("title").value.trim();
-  const priceVal = document.getElementById("price").value.trim();
-  const buyer = document.getElementById("buyer").value.trim();
-  const category = document.getElementById("category").value.trim();
-  const location = document.getElementById("location").value.trim();
-  const description = document.getElementById("description").value.trim();
+.detail-price-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
 
-  const imagePromises = newAdImageFiles.map(
-    (file) =>
-      new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (evt) => resolve(evt.target.result);
-        reader.readAsDataURL(file);
-      })
-  );
-  const images = await Promise.all(imagePromises);
+.detail-price {
+  font-size: 18px;
+  font-weight: 800;
+  color: #fbbf24;
+}
 
-  const ad = {
-    id: Date.now().toString(),
-    title,
-    price: priceVal ? Number(priceVal) : null,
-    buyer: buyer || null,
-    category: category || null,
-    description: description || "",
-    location: location || null,
-    status: "til-salgs",
-    images,
-    createdAt: new Date().toISOString(),
-  };
+.status-pill {
+  border-radius: var(--radius-pill);
+  padding: 2px 8px;
+  font-size: 11px;
+  background: rgba(34, 197, 94, 0.18);
+  color: #bbf7d0;
+  border: 1px solid rgba(34, 197, 94, 0.7);
+}
 
-  ads.unshift(ad);
-  saveAdsToStorage();
-  closeModal(newAdModal);
-  renderAds();
-});
+.detail-description {
+  font-size: 13px;
+  color: var(--text-soft);
+  white-space: pre-wrap;
+}
 
-// RENDER LISTE
-function renderAds() {
-  adListEl.innerHTML = "";
+.detail-extra {
+  font-size: 12px;
+  color: var(--text-softer);
+}
 
-  const filtered = ads.filter((ad) => {
-    if (filterStatus !== "alle" && ad.status !== filterStatus) return false;
+.detail-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
 
-    if (filterCategory !== "alle") {
-      if (!ad.category || ad.category.toLowerCase() !== filterCategory.toLowerCase()) {
-        return false;
-      }
-    }
+.detail-actions {
+  margin-top: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
 
-    if (searchTerm) {
-      const text =
-        (ad.title || "") +
-        " " +
-        (ad.description || "") +
-        " " +
-        (ad.category || "") +
-        " " +
-        (ad.location || "");
-      if (!text.toLowerCase().includes(searchTerm.toLowerCase())) return false;
-    }
+.detail-meta {
+  font-size: 11px;
+  color: var(--text-soft);
+}
 
-    return true;
-  });
+/* LIGHT THEME (når body.light-theme) */
 
-  if (!filtered.length) {
-    adListEl.innerHTML =
-      '<p class="help-text">Ingen annonser som matcher filtrene ennå.</p>';
-    return;
-  }
+body.light-theme {
+  background: radial-gradient(circle at top, #e5e7eb 0, #ffffff 60%);
+  color: #020617;
+}
 
-  filtered.forEach((ad) => {
-    const card = document.createElement("article");
-    card.className = "ad-card";
+body.light-theme .topbar,
+body.light-theme .ad-card,
+body.light-theme .modal-panel {
+  background: #ffffff;
+  border-color: rgba(148, 163, 184, 0.6);
+}
 
-    const header = document.createElement("div");
-    header.className = "ad-header-row";
+body.light-theme .search-input {
+  background: #f9fafb;
+  color: #020617;
+}
 
-    const left = document.createElement("div");
-    const titleEl = document.createElement("div");
-    titleEl.className
+body.light-theme .chip {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+body.light-theme .chip-outline {
+  background: transparent;
+}
+
+body.light-theme .chip-active {
+  background: #f97316;
+  color: #111827;
+}
+
+body.light-theme .pill-ghost {
+  background: #e5e7eb;
+  color: #020617;
+}
