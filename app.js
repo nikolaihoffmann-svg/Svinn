@@ -1,18 +1,24 @@
-// Enkel, "gammeldags" JS – funker fint i Safari på iPhone
+// Enkel JS – med admin-login, dag/natt og mulighet for å redigere annonser
 
 window.addEventListener("DOMContentLoaded", function () {
   var STORAGE_KEY = "ekstraverdi_ads_v2";
+  var ADMIN_KEY = "ekstraverdi_isAdmin";
+  var THEME_KEY = "ekstraverdi_theme";
 
   var navTabs = document.querySelectorAll(".nav-tab");
+  var adminTabs = document.querySelectorAll(".admin-tab");
   var filterSection = document.getElementById("filterSection");
   var contentArea = document.getElementById("contentArea");
   var searchInput = document.getElementById("searchInput");
   var statusChips = document.querySelectorAll("[data-status]");
   var fabAdd = document.getElementById("fabAdd");
-  var logoutBtn = document.getElementById("logoutBtn");
+  var adminBtn = document.getElementById("adminBtn");
+  var themeToggle = document.getElementById("themeToggle");
 
   var newAdModal = document.getElementById("newAdModal");
   var newAdForm = document.getElementById("newAdForm");
+  var adModalTitle = document.getElementById("adModalTitle");
+  var adSubmitBtn = document.getElementById("adSubmitBtn");
   var imagesInput = document.getElementById("images");
   var imagePreviewList = document.getElementById("newAdImagePreview");
 
@@ -31,6 +37,8 @@ window.addEventListener("DOMContentLoaded", function () {
   var filterStatus = "til-salgs"; // til-salgs | reservert | solgt | alle
   var searchTerm = "";
   var newAdImageFiles = [];
+  var editingAdId = null;
+  var isAdmin = false;
 
   // ------- STORAGE -------
 
@@ -55,6 +63,93 @@ window.addEventListener("DOMContentLoaded", function () {
   }
 
   var ads = loadAds();
+
+  // ------- ADMIN STATE -------
+
+  function loadAdminState() {
+    try {
+      return localStorage.getItem(ADMIN_KEY) === "1";
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function saveAdminState() {
+    try {
+      localStorage.setItem(ADMIN_KEY, isAdmin ? "1" : "0");
+    } catch (e) {}
+  }
+
+  function updateAdminUI() {
+    if (adminBtn) {
+      adminBtn.textContent = isAdmin ? "Logg ut admin" : "Logg inn som admin";
+    }
+
+    for (var i = 0; i < adminTabs.length; i++) {
+      adminTabs[i].style.display = isAdmin ? "" : "none";
+    }
+
+    if (!isAdmin && (currentView === "admin" || currentView === "overview")) {
+      setView("sales");
+    }
+  }
+
+  isAdmin = loadAdminState();
+  updateAdminUI();
+
+  if (adminBtn) {
+    adminBtn.addEventListener("click", function () {
+      if (isAdmin) {
+        isAdmin = false;
+        saveAdminState();
+        updateAdminUI();
+      } else {
+        var ok = window.confirm("Logge inn som admin?");
+        if (!ok) return;
+        isAdmin = true;
+        saveAdminState();
+        updateAdminUI();
+      }
+    });
+  }
+
+  // ------- THEME -------
+
+  function applyTheme(theme) {
+    if (theme === "dark") {
+      document.body.classList.add("dark-theme");
+      if (themeToggle) themeToggle.textContent = "Lys modus";
+    } else {
+      document.body.classList.remove("dark-theme");
+      if (themeToggle) themeToggle.textContent = "Mørk modus";
+    }
+  }
+
+  function loadTheme() {
+    try {
+      var t = localStorage.getItem(THEME_KEY);
+      if (t === "dark" || t === "light") {
+        applyTheme(t);
+      } else {
+        applyTheme("light");
+      }
+    } catch (e) {
+      applyTheme("light");
+    }
+  }
+
+  loadTheme();
+
+  if (themeToggle) {
+    themeToggle.addEventListener("click", function () {
+      var isDark = document.body.classList.contains("dark-theme");
+      var next = isDark ? "light" : "dark";
+      applyTheme(next);
+      try {
+        localStorage.setItem(THEME_KEY, next);
+      } catch (e) {}
+    });
+  }
 
   // ------- MODAL HJELP -------
 
@@ -90,7 +185,12 @@ window.addEventListener("DOMContentLoaded", function () {
   // ------- VIEW-BYTTER -------
 
   function setView(view) {
+    if ((view === "admin" || view === "overview") && !isAdmin) {
+      view = "sales";
+    }
+
     currentView = view;
+
     for (var i = 0; i < navTabs.length; i++) {
       navTabs[i].classList.remove("nav-tab-active");
       if (navTabs[i].getAttribute("data-view") === view) {
@@ -98,7 +198,6 @@ window.addEventListener("DOMContentLoaded", function () {
       }
     }
 
-    // Filterlinja brukes kun på sales + admin
     if (view === "overview") {
       filterSection.style.display = "none";
     } else {
@@ -142,23 +241,14 @@ window.addEventListener("DOMContentLoaded", function () {
   // ------- FAB: NY ANNONSE -------
 
   fabAdd.addEventListener("click", function () {
+    editingAdId = null;
+    adModalTitle.textContent = "Ny annonse";
+    adSubmitBtn.textContent = "Lagre annonse";
     newAdForm.reset();
     newAdImageFiles = [];
     imagePreviewList.innerHTML = "";
     openModal(newAdModal);
   });
-
-  // ------- LOGG UT / NULLSTILL -------
-
-  if (logoutBtn) {
-    logoutBtn.addEventListener("click", function () {
-      if (window.confirm("Slette alle lagrede annonser på denne enheten?")) {
-        ads = [];
-        saveAds();
-        renderCurrentView();
-      }
-    });
-  }
 
   // ------- BILDEPREVIEW -------
 
@@ -185,7 +275,7 @@ window.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // ------- NY ANNONSE SUBMIT -------
+  // ------- NY / REDIGER ANNONSE SUBMIT -------
 
   newAdForm.addEventListener("submit", function (e) {
     e.preventDefault();
@@ -213,23 +303,48 @@ window.addEventListener("DOMContentLoaded", function () {
     }
 
     Promise.all(promises).then(function (images) {
-      var ad = {
-        id: Date.now().toString(),
-        title: title,
-        price: priceVal ? Number(priceVal) : null,
-        buyer: buyer || null,
-        category: category || null,
-        description: description || "",
-        location: locationVal || null,
-        status: "til-salgs", // start alltid som til salgs
-        images: images,
-        createdAt: new Date().toISOString()
-      };
+      if (editingAdId) {
+        // oppdater eksisterende annonse
+        var existing = null;
+        for (var i = 0; i < ads.length; i++) {
+          if (ads[i].id === editingAdId) {
+            existing = ads[i];
+            break;
+          }
+        }
+        if (existing) {
+          existing.title = title;
+          existing.price = priceVal ? Number(priceVal) : null;
+          existing.buyer = buyer || null;
+          existing.category = category || null;
+          existing.description = description || "";
+          existing.location = locationVal || null;
+          if (newAdImageFiles.length > 0) {
+            existing.images = images;
+          }
+          saveAds();
+        }
+      } else {
+        // ny annonse
+        var ad = {
+          id: Date.now().toString(),
+          title: title,
+          price: priceVal ? Number(priceVal) : null,
+          buyer: buyer || null,
+          category: category || null,
+          description: description || "",
+          location: locationVal || null,
+          status: "til-salgs",
+          images: images,
+          createdAt: new Date().toISOString()
+        };
+        ads.unshift(ad);
+        saveAds();
+      }
 
-      ads.unshift(ad);
-      saveAds();
+      editingAdId = null;
       closeModal(newAdModal);
-      setView("sales");
+      setView(isAdmin ? "admin" : "sales");
     });
   });
 
@@ -289,7 +404,7 @@ window.addEventListener("DOMContentLoaded", function () {
 
   // ------- RENDER LISTE (SALES + ADMIN) -------
 
-  function renderList(isAdmin) {
+  function renderList(isAdminList) {
     var list = filterAdsForList();
 
     if (!list.length) {
@@ -304,7 +419,6 @@ window.addEventListener("DOMContentLoaded", function () {
         var card = document.createElement("article");
         card.className = "ad-card";
 
-        // Bilde
         var thumb = document.createElement("div");
         thumb.className = "ad-thumb";
         if (ad.images && ad.images.length) {
@@ -315,7 +429,6 @@ window.addEventListener("DOMContentLoaded", function () {
         }
         card.appendChild(thumb);
 
-        // Info
         var info = document.createElement("div");
         info.className = "ad-info";
 
@@ -389,7 +502,7 @@ window.addEventListener("DOMContentLoaded", function () {
 
         footerLeft.appendChild(btnDetails);
 
-        if (!isAdmin) {
+        if (!isAdminList) {
           var btnShare = document.createElement("button");
           btnShare.type = "button";
           btnShare.className = "btn-link";
@@ -412,7 +525,7 @@ window.addEventListener("DOMContentLoaded", function () {
         info.appendChild(tags);
         info.appendChild(footer);
 
-        if (isAdmin) {
+        if (isAdminList) {
           var adminControls = document.createElement("div");
           adminControls.className = "admin-controls";
 
@@ -436,6 +549,14 @@ window.addEventListener("DOMContentLoaded", function () {
             renderCurrentView();
           });
 
+          var editBtn = document.createElement("button");
+          editBtn.type = "button";
+          editBtn.className = "btn-link";
+          editBtn.textContent = "Rediger";
+          editBtn.addEventListener("click", function () {
+            openEditAd(ad);
+          });
+
           var deleteBtn = document.createElement("button");
           deleteBtn.type = "button";
           deleteBtn.className = "btn-small-danger";
@@ -451,11 +572,13 @@ window.addEventListener("DOMContentLoaded", function () {
           });
 
           adminControls.appendChild(statusSelect);
+          adminControls.appendChild(editBtn);
           adminControls.appendChild(deleteBtn);
 
           info.appendChild(adminControls);
         }
 
+        card.appendChild(thumb);
         card.appendChild(info);
         contentArea.appendChild(card);
       })(list[i]);
@@ -498,7 +621,7 @@ window.addEventListener("DOMContentLoaded", function () {
       '<div class="overview-value">' +
       formatCurrency(sumTilSalgs) +
       "</div>";
-    html += '<div class="overview-sub">Prisfeltet må være fylt inn</div>';
+    html += '<div class="overview-sub">Prisfelt må være fylt inn</div>';
     html += "</div>";
 
     html += '<div class="overview-card">';
@@ -594,6 +717,37 @@ window.addEventListener("DOMContentLoaded", function () {
     } else {
       window.alert("Kopier lenken i adressefeltet for å dele.");
     }
+  }
+
+  // ------- ÅPNE REDIGER-MODUS -------
+
+  function openEditAd(ad) {
+    editingAdId = ad.id;
+    adModalTitle.textContent = "Rediger annonse";
+    adSubmitBtn.textContent = "Lagre endringer";
+
+    document.getElementById("title").value = ad.title || "";
+    document.getElementById("price").value =
+      ad.price != null ? String(ad.price) : "";
+    document.getElementById("buyer").value = ad.buyer || "";
+    document.getElementById("category").value = ad.category || "";
+    document.getElementById("location").value = ad.location || "";
+    document.getElementById("description").value = ad.description || "";
+
+    newAdImageFiles = [];
+    imagePreviewList.innerHTML = "";
+    if (ad.images && ad.images.length) {
+      for (var i = 0; i < ad.images.length; i++) {
+        var div = document.createElement("div");
+        div.className = "image-preview-item";
+        var img = document.createElement("img");
+        img.src = ad.images[i];
+        div.appendChild(img);
+        imagePreviewList.appendChild(div);
+      }
+    }
+
+    openModal(newAdModal);
   }
 
   // ------- RENDER CURRENT VIEW -------
