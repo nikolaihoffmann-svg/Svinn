@@ -1,684 +1,568 @@
-:root {
-  --bg: #020617;
-  --bg-elevated: #050b18;
-  --bg-elevated-soft: #071021;
-  --bg-chip: #0b1220;
-  --bg-chip-active: #f97316;
-  --bg-pill-light: #f9fafb;
-
-  --text: #e5e7eb;
-  --text-soft: #9ca3af;
-  --text-softer: #6b7280;
-  --text-dark: #020617;
-
-  --accent: #f97316;
-  --accent-soft: rgba(249, 115, 22, 0.2);
-
-  --border-soft: rgba(148, 163, 184, 0.25);
-
-  --radius-lg: 20px;
-  --radius-md: 14px;
-  --radius-pill: 999px;
-
-  --shadow-soft: 0 18px 40px rgba(0, 0, 0, 0.6);
-
-  --transition-fast: 0.2s ease-out;
-}
-
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
-html,
-body {
-  margin: 0;
-  padding: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
-  background: radial-gradient(circle at top, #020617 0, #000 60%);
-  color: var(--text);
-}
-
-body {
-  min-height: 100vh;
-}
-
-.app {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 16px 12px 32px;
-}
-
-/* TOPP */
-
-.topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 14px;
-  border-radius: 24px;
-  background: radial-gradient(circle at top left, #0b1220 0, #020617 55%, #000 100%);
-  border: 1px solid rgba(148, 163, 184, 0.45);
-  box-shadow: var(--shadow-soft);
-  margin-bottom: 12px;
-  gap: 12px;
-}
-
-.topbar-left {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.app-title {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-}
-
-.app-name {
-  font-size: 22px;
-  font-weight: 800;
-  letter-spacing: 0.03em;
-  color: #f97316;
-}
-
-.app-icon {
-  font-size: 18px;
-}
-
-.app-tagline {
-  font-size: 11px;
-  color: var(--text-soft);
-}
-
-.topbar-right {
-  display: flex;
-  gap: 8px;
-}
-
-.pill {
-  border-radius: var(--radius-pill);
-  padding: 5px 12px;
-  font-size: 12px;
-  border: 1px solid var(--border-soft);
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  background: transparent;
-  color: var(--text);
-}
-
-.pill-ghost {
-  background: rgba(15, 23, 42, 0.9);
-}
-
-.pill-light {
-  background: var(--bg-pill-light);
-  color: var(--text-dark);
-}
-
-/* TABS */
-
-.tabs {
-  display: flex;
-  gap: 6px;
-  margin-top: 10px;
-  margin-bottom: 10px;
-  overflow-x: auto;
-  padding-bottom: 2px;
-}
-
-.tab {
-  border-radius: var(--radius-pill);
-  padding: 6px 12px;
-  font-size: 12px;
-  border: none;
-  background: #020617;
-  color: var(--text-soft);
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.tab.active {
-  background: var(--bg-pill-light);
-  color: var(--text-dark);
-}
-
-/* SØK / FILTER */
-
-.search-section {
-  margin-bottom: 8px;
-}
-
-.search-wrapper {
-  position: relative;
-}
-
-.search-input {
-  width: 100%;
-  border-radius: 14px;
-  border: 1px solid var(--border-soft);
-  background: #020617;
-  color: var(--text);
-  font-size: 13px;
-  padding: 9px 12px;
-}
-
-.search-input::placeholder {
-  color: var(--text-softer);
-}
-
-.chip-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 10px;
-}
-
-.chip-group {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.chip {
-  border-radius: var(--radius-pill);
-  padding: 4px 11px;
-  font-size: 11px;
-  border: none;
-  background: var(--bg-chip);
-  color: var(--text-soft);
-  cursor: pointer;
-}
-
-.chip-outline {
-  border: 1px solid rgba(55, 65, 81, 0.8);
-  background: transparent;
-}
-
-.chip-active {
-  background: var(--bg-chip-active);
-  color: var(--text-dark);
-}
-
-/* HINT for aktiv view */
-
-.view-hint {
-  font-size: 11px;
-  color: var(--text-softer);
-  margin-bottom: 4px;
-}
-
-/* LISTE / KORT */
-
-.content {
-  margin-top: 8px;
-}
-
-.ad-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-/* Annonsekort */
-
-.ad-card {
-  background: radial-gradient(circle at top left, #050b18 0, #020617 55%);
-  border-radius: 22px;
-  border: 1px solid rgba(31, 41, 55, 0.9);
-  padding: 12px 12px 10px;
-  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.75);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.ad-header-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 8px;
-}
-
-.ad-title {
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.ad-subtitle {
-  font-size: 11px;
-  color: var(--text-soft);
-}
-
-.ad-price {
-  font-size: 16px;
-  font-weight: 700;
-  color: #fbbf24;
-}
-
-/* PILLS / TAGS */
-
-.tag-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 2px;
-}
-
-.tag-pill {
-  border-radius: var(--radius-pill);
-  font-size: 10px;
-  padding: 3px 8px;
-  background: #020617;
-  color: var(--text-soft);
-  border: 1px solid rgba(55, 65, 81, 0.9);
-}
-
-.tag-pill-primary {
-  background: rgba(34, 197, 94, 0.12);
-  border-color: rgba(34, 197, 94, 0.7);
-  color: #bbf7d0;
-}
-
-/* BILDE I LISTA – liten og låst høyde */
-
-.ad-image-wrapper {
-  margin-top: 6px;
-  border-radius: 18px;
-  overflow: hidden;
-  position: relative;
-  background: #020617;
-  height: 160px !important;
-  max-height: 160px !important;
-}
-
-/* Bildet får ikke bestemme størrelsen selv */
-.ad-image-wrapper img {
-  width: 100% !important;
-  height: 100% !important;
-  object-fit: cover !important;
-  display: block;
-}
-
-/* teller for flere bilder */
-.ad-image-count {
-  position: absolute;
-  right: 8px;
-  bottom: 8px;
-  border-radius: 999px;
-  padding: 3px 8px;
-  font-size: 11px;
-  background: rgba(15, 23, 42, 0.85);
-  color: var(--text-soft);
-  border: 1px solid rgba(148, 163, 184, 0.7);
-}
-
-/* FOOTER PÅ KORTET */
-
-.ad-footer-row {
-  margin-top: 6px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-}
-
-.ad-footer-left {
-  display: flex;
-  gap: 6px;
-}
-
-.btn-small {
-  border-radius: var(--radius-pill);
-  padding: 5px 12px;
-  font-size: 11px;
-  border: none;
-  cursor: pointer;
-}
-
-.btn-small-primary {
-  background: #f9fafb;
-  color: #020617;
-}
-
-.btn-small-secondary {
-  background: #020617;
-  color: var(--text-soft);
-  border: 1px solid rgba(55, 65, 81, 0.9);
-}
-
-.ad-time {
-  font-size: 10px;
-  color: var(--text-softer);
-}
-
-/* FAB (+) */
-
-.fab {
-  position: fixed;
-  right: 18px;
-  bottom: 24px;
-  width: 58px;
-  height: 58px;
-  border-radius: 50%;
-  border: none;
-  cursor: pointer;
-  font-size: 28px;
-  font-weight: 500;
-  background: radial-gradient(circle at top left, #fed7aa 0, #f97316 40%, #b45309 100%);
-  color: #111827;
-  box-shadow: 0 22px 45px rgba(0, 0, 0, 0.9);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 20;
-}
-
-/* MODALER */
-
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.65);
-  backdrop-filter: blur(4px);
-  display: none;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-  z-index: 30;
-}
-
-.modal-backdrop.show {
-  display: flex;
-}
-
-.modal-panel {
-  width: 100%;
-  max-width: 540px;
-  background: #020617;
-  border-radius: 22px;
-  border: 1px solid rgba(148, 163, 184, 0.6);
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.9);
-  padding: 14px 14px 14px;
-}
-
-.modal-panel-large {
-  max-width: 900px;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.modal-header h2 {
-  font-size: 17px;
-}
-
-.modal-close {
-  border-radius: 999px;
-  width: 28px;
-  height: 28px;
-  border: 1px solid rgba(55, 65, 81, 0.9);
-  background: #020617;
-  color: var(--text-soft);
-  cursor: pointer;
-}
-
-/* FORM */
-
-.form {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 4px;
-}
-
-.form-row {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.form-row label {
-  font-size: 12px;
-  color: var(--text-soft);
-}
-
-.form-row input,
-.form-row textarea {
-  border-radius: 12px;
-  border: 1px solid var(--border-soft);
-  background: #020617;
-  color: var(--text);
-  font-size: 13px;
-  padding: 7px 10px;
-}
-
-.form-row input::placeholder,
-.form-row textarea::placeholder {
-  color: var(--text-softer);
-}
-
-.help-text {
-  font-size: 11px;
-  color: var(--text-softer);
-  margin-top: 2px;
-}
-
-.image-preview-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 4px;
-}
-
-.image-preview-item {
-  width: 60px;
-  height: 60px;
-  border-radius: 12px;
-  overflow: hidden;
-  border: 1px solid rgba(55, 65, 81, 0.9);
-}
-
-.image-preview-item img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-/* MODAL FOOTER */
-
-.modal-footer {
-  margin-top: 10px;
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-}
-
-.btn {
-  border-radius: var(--radius-pill);
-  padding: 7px 14px;
-  font-size: 13px;
-  border: none;
-  cursor: pointer;
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, #f97316, #fb923c);
-  color: #111827;
-}
-
-.btn-secondary {
-  background: #020617;
-  color: var(--text-soft);
-  border: 1px solid rgba(55, 65, 81, 0.9);
-}
-
-/* DETALJMODAL */
-
-.detail-layout {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-@media (min-width: 800px) {
-  .detail-layout {
-    flex-direction: row;
+// Hele appen kjøres når DOM-en er klar
+window.addEventListener("DOMContentLoaded", function () {
+  var STORAGE_KEY = "ekstraverdi_ads_v1";
+  var THEME_KEY = "ekstraverdi_theme_v1";
+
+  // ---- HENT ELEMENTER ----
+  var adListEl = document.getElementById("adList");
+  var viewHintEl = document.getElementById("viewHint");
+  var fabAdd = document.getElementById("fabAdd");
+  var newAdModal = document.getElementById("newAdModal");
+  var newAdForm = document.getElementById("newAdForm");
+  var imagesInput = document.getElementById("images");
+  var imagePreviewList = document.getElementById("newAdImagePreview");
+  var searchInput = document.getElementById("searchInput");
+  var statusChips = document.querySelectorAll("[data-filter-status]");
+  var categoryChips = document.querySelectorAll("[data-filter-category]");
+  var tabs = document.querySelectorAll(".tab");
+  var themeToggle = document.getElementById("themeToggle");
+  var logoutBtn = document.getElementById("logoutBtn");
+
+  var detailModal = document.getElementById("detailModal");
+  var detailTitle = document.getElementById("detailTitle");
+  var detailMeta = document.getElementById("detailMeta");
+  var detailMainImage = document.getElementById("detailMainImage");
+  var detailThumbs = document.getElementById("detailThumbs");
+  var detailPrice = document.getElementById("detailPrice");
+  var detailStatus = document.getElementById("detailStatus");
+  var detailDescription = document.getElementById("detailDescription");
+  var detailExtra = document.getElementById("detailExtra");
+  var detailTags = document.getElementById("detailTags");
+
+  // Hvis noe av dette mangler, ikke gjør noe mer (hindrer krasj)
+  if (!adListEl || !fabAdd || !newAdModal || !newAdForm) {
+    return;
   }
-}
 
-.detail-gallery {
-  flex: 1.2;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
+  var newAdImageFiles = [];
+  var filterStatus = "til-salgs";
+  var filterCategory = "alle";
+  var searchTerm = "";
+  var currentView = "sales";
 
-.detail-main-image {
-  border-radius: 18px;
-  overflow: hidden;
-  background: radial-gradient(circle at top, #111827, #020617 60%);
-  max-height: 320px;
-}
+  // ---- STORAGE ----
+  function loadAdsFromStorage() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return [];
+      var parsed = JSON.parse(raw);
+      if (Object.prototype.toString.call(parsed) === "[object Array]") {
+        return parsed;
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
 
-.detail-main-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
+  function saveAdsToStorage() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(ads));
+    } catch (e) {
+      // ignore
+    }
+  }
 
-.detail-thumbs {
-  display: flex;
-  gap: 6px;
-  overflow-x: auto;
-  padding-bottom: 4px;
-}
+  var ads = loadAdsFromStorage();
 
-.detail-thumb {
-  border-radius: 10px;
-  overflow: hidden;
-  border: 1px solid rgba(55, 65, 81, 0.9);
-  flex-shrink: 0;
-  width: 60px;
-  height: 60px;
-  cursor: pointer;
-  opacity: 0.8;
-}
+  // ---- THEME ----
+  function applyTheme(theme) {
+    if (theme === "light") {
+      document.body.classList.add("light-theme");
+      if (themeToggle) themeToggle.textContent = "☀️";
+    } else {
+      document.body.classList.remove("light-theme");
+      if (themeToggle) themeToggle.textContent = "🌙";
+    }
+  }
 
-.detail-thumb.active {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent);
-  opacity: 1;
-}
+  function loadTheme() {
+    try {
+      var stored = localStorage.getItem(THEME_KEY);
+      if (stored === "light" || stored === "dark") {
+        applyTheme(stored);
+      } else {
+        applyTheme("dark");
+      }
+    } catch (e) {
+      applyTheme("dark");
+    }
+  }
 
-.detail-thumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
+  if (themeToggle) {
+    themeToggle.addEventListener("click", function () {
+      var isLight = document.body.classList.contains("light-theme");
+      var next = isLight ? "dark" : "light";
+      applyTheme(next);
+      try {
+        localStorage.setItem(THEME_KEY, next);
+      } catch (e) {}
+    });
+  }
 
-.detail-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
+  loadTheme();
 
-.detail-price-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 8px;
-}
+  // ---- MODAL HJELP ----
+  function openModal(el) {
+    if (!el) return;
+    el.classList.add("show");
+  }
 
-.detail-price {
-  font-size: 18px;
-  font-weight: 800;
-  color: #fbbf24;
-}
+  function closeModal(el) {
+    if (!el) return;
+    el.classList.remove("show");
+  }
 
-.status-pill {
-  border-radius: var(--radius-pill);
-  padding: 2px 8px;
-  font-size: 11px;
-  background: rgba(34, 197, 94, 0.18);
-  color: #bbf7d0;
-  border: 1px solid rgba(34, 197, 94, 0.7);
-}
+  var closeButtons = document.querySelectorAll("[data-close-modal]");
+  for (var i = 0; i < closeButtons.length; i++) {
+    (function (btn) {
+      btn.addEventListener("click", function () {
+        var modal = btn.closest(".modal-backdrop");
+        closeModal(modal);
+      });
+    })(closeButtons[i]);
+  }
 
-.detail-description {
-  font-size: 13px;
-  color: var(--text-soft);
-  white-space: pre-wrap;
-}
+  var modals = [newAdModal, detailModal];
+  for (var m = 0; m < modals.length; m++) {
+    (function (modal) {
+      if (!modal) return;
+      modal.addEventListener("click", function (e) {
+        if (e.target === modal) {
+          closeModal(modal);
+        }
+      });
+    })(modals[m]);
+  }
 
-.detail-extra {
-  font-size: 12px;
-  color: var(--text-softer);
-}
+  // ---- TABS ----
+  function updateViewHint() {
+    if (!viewHintEl) return;
+    if (currentView === "sales") {
+      viewHintEl.textContent = "";
+    } else if (currentView === "admin") {
+      viewHintEl.textContent =
+        "Adminvisning (samme liste nå, senere kan vi legge til redigering/sletting).";
+    } else if (currentView === "overview") {
+      viewHintEl.textContent = "Oversikt (kommer senere, viser samme liste nå).";
+    } else if (currentView === "requests") {
+      viewHintEl.textContent = "Forespørsler (kommer senere, viser samme liste nå).";
+    }
+  }
 
-.detail-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
+  for (var t = 0; t < tabs.length; t++) {
+    (function (tab) {
+      tab.addEventListener("click", function () {
+        for (var j = 0; j < tabs.length; j++) {
+          tabs[j].classList.remove("active");
+        }
+        tab.classList.add("active");
+        currentView = tab.getAttribute("data-view") || "sales";
+        updateViewHint();
+        renderAds();
+      });
+    })(tabs[t]);
+  }
 
-.detail-actions {
-  margin-top: auto;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
+  // ---- LOGG UT ----
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", function () {
+      if (window.confirm("Vil du tømme alle annonser (demo-logg ut)?")) {
+        ads = [];
+        saveAdsToStorage();
+        renderAds();
+        window.alert("Lokale annonser er slettet.");
+      }
+    });
+  }
 
-.detail-meta {
-  font-size: 11px;
-  color: var(--text-soft);
-}
+  // ---- + KNAPP ----
+  fabAdd.addEventListener("click", function () {
+    newAdForm.reset();
+    newAdImageFiles = [];
+    if (imagePreviewList) imagePreviewList.innerHTML = "";
+    openModal(newAdModal);
+  });
 
-/* LIGHT THEME (når body.light-theme) */
+  // ---- BILDEPREVIEW ----
+  if (imagesInput) {
+    imagesInput.addEventListener("change", function () {
+      var files = Array.prototype.slice.call(imagesInput.files || []);
+      newAdImageFiles = files;
+      if (imagePreviewList) imagePreviewList.innerHTML = "";
 
-body.light-theme {
-  background: radial-gradient(circle at top, #e5e7eb 0, #ffffff 60%);
-  color: #020617;
-}
+      for (var i = 0; i < files.length; i++) {
+        (function (file) {
+          var reader = new FileReader();
+          reader.onload = function (e) {
+            if (!imagePreviewList) return;
+            var div = document.createElement("div");
+            div.className = "image-preview-item";
+            var img = document.createElement("img");
+            img.src = e.target.result;
+            div.appendChild(img);
+            imagePreviewList.appendChild(div);
+          };
+          reader.readAsDataURL(file);
+        })(files[i]);
+      }
+    });
+  }
 
-body.light-theme .topbar,
-body.light-theme .ad-card,
-body.light-theme .modal-panel {
-  background: #ffffff;
-  border-color: rgba(148, 163, 184, 0.6);
-}
+  // ---- NY ANNONSE ----
+  newAdForm.addEventListener("submit", function (e) {
+    e.preventDefault();
 
-body.light-theme .search-input {
-  background: #f9fafb;
-  color: #020617;
-}
+    var titleEl = document.getElementById("title");
+    var priceEl = document.getElementById("price");
+    var buyerEl = document.getElementById("buyer");
+    var categoryEl = document.getElementById("category");
+    var locationEl = document.getElementById("location");
+    var descEl = document.getElementById("description");
 
-body.light-theme .chip {
-  background: #e5e7eb;
-  color: #111827;
-}
+    var title = titleEl ? titleEl.value.trim() : "";
+    var priceVal = priceEl ? priceEl.value.trim() : "";
+    var buyer = buyerEl ? buyerEl.value.trim() : "";
+    var category = categoryEl ? categoryEl.value.trim() : "";
+    var locationVal = locationEl ? locationEl.value.trim() : "";
+    var description = descEl ? descEl.value.trim() : "";
 
-body.light-theme .chip-outline {
-  background: transparent;
-}
+    var promises = [];
+    for (var i = 0; i < newAdImageFiles.length; i++) {
+      (function (file) {
+        promises.push(
+          new Promise(function (resolve) {
+            var reader = new FileReader();
+            reader.onload = function (evt) {
+              resolve(evt.target.result);
+            };
+            reader.readAsDataURL(file);
+          })
+        );
+      })(newAdImageFiles[i]);
+    }
 
-body.light-theme .chip-active {
-  background: #f97316;
-  color: #111827;
-}
+    Promise.all(promises).then(function (images) {
+      var ad = {
+        id: Date.now().toString(),
+        title: title,
+        price: priceVal ? Number(priceVal) : null,
+        buyer: buyer || null,
+        category: category || null,
+        description: description || "",
+        location: locationVal || null,
+        status: "til-salgs",
+        images: images,
+        createdAt: new Date().toISOString()
+      };
 
-body.light-theme .pill-ghost {
-  background: #e5e7eb;
-  color: #020617;
-}
+      ads.unshift(ad);
+      saveAdsToStorage();
+      closeModal(newAdModal);
+      renderAds();
+    });
+  });
+
+  // ---- FILTRE ----
+  for (var i = 0; i < statusChips.length; i++) {
+    (function (chip) {
+      chip.addEventListener("click", function () {
+        for (var j = 0; j < statusChips.length; j++) {
+          statusChips[j].classList.remove("chip-active");
+        }
+        chip.classList.add("chip-active");
+        filterStatus = chip.getAttribute("data-filter-status");
+        renderAds();
+      });
+    })(statusChips[i]);
+  }
+
+  for (var i2 = 0; i2 < categoryChips.length; i2++) {
+    (function (chip) {
+      chip.addEventListener("click", function () {
+        for (var j = 0; j < categoryChips.length; j++) {
+          categoryChips[j].classList.remove("chip-active");
+        }
+        chip.classList.add("chip-active");
+        filterCategory = chip.getAttribute("data-filter-category");
+        renderAds();
+      });
+    })(categoryChips[i2]);
+  }
+
+  if (searchInput) {
+    searchInput.addEventListener("input", function () {
+      searchTerm = searchInput.value;
+      renderAds();
+    });
+  }
+
+  // ---- RENDER LISTE ----
+  function renderAds() {
+    if (!adListEl) return;
+
+    adListEl.innerHTML = "";
+
+    var filtered = [];
+    for (var i = 0; i < ads.length; i++) {
+      var ad = ads[i];
+      if (filterStatus !== "alle" && ad.status !== filterStatus) continue;
+
+      if (filterCategory !== "alle") {
+        if (
+          !ad.category ||
+          ad.category.toLowerCase() !== filterCategory.toLowerCase()
+        ) {
+          continue;
+        }
+      }
+
+      if (searchTerm) {
+        var text =
+          (ad.title || "") +
+          " " +
+          (ad.description || "") +
+          " " +
+          (ad.category || "") +
+          " " +
+          (ad.location || "");
+        if (text.toLowerCase().indexOf(searchTerm.toLowerCase()) === -1) {
+          continue;
+        }
+      }
+
+      filtered.push(ad);
+    }
+
+    if (!filtered.length) {
+      adListEl.innerHTML =
+        '<p class="help-text">Ingen annonser som matcher filtrene ennå.</p>';
+      return;
+    }
+
+    for (var k = 0; k < filtered.length; k++) {
+      (function (ad) {
+        var card = document.createElement("article");
+        card.className = "ad-card";
+
+        var header = document.createElement("div");
+        header.className = "ad-header-row";
+
+        var left = document.createElement("div");
+        var titleEl = document.createElement("div");
+        titleEl.className = "ad-title";
+        titleEl.textContent = ad.title;
+
+        var subtitle = document.createElement("div");
+        subtitle.className = "ad-subtitle";
+        var dateStr = formatDateShort(ad.createdAt);
+        var buyerText = ad.buyer ? "selges til " + ad.buyer : "til salgs";
+        subtitle.textContent = buyerText + " · Lagt ut: " + dateStr;
+
+        left.appendChild(titleEl);
+        left.appendChild(subtitle);
+
+        var priceEl = document.createElement("div");
+        priceEl.className = "ad-price";
+        priceEl.textContent =
+          ad.price != null ? ad.price.toLocaleString("nb-NO") + " kr" : "Gi bud";
+
+        header.appendChild(left);
+        header.appendChild(priceEl);
+
+        var tagRow = document.createElement("div");
+        tagRow.className = "tag-row";
+
+        var statusTag = document.createElement("span");
+        statusTag.className = "tag-pill tag-pill-primary";
+        statusTag.textContent = ad.status === "til-salgs" ? "Til salgs" : "Solgt";
+        tagRow.appendChild(statusTag);
+
+        if (ad.category) {
+          var catTag = document.createElement("span");
+          catTag.className = "tag-pill";
+          catTag.textContent = ad.category;
+          tagRow.appendChild(catTag);
+        }
+
+        if (ad.location) {
+          var locTag = document.createElement("span");
+          locTag.className = "tag-pill";
+          locTag.textContent = ad.location;
+          tagRow.appendChild(locTag);
+        }
+
+        var imgWrapper = document.createElement("div");
+        imgWrapper.className = "ad-image-wrapper";
+        imgWrapper.style.height = "160px";
+        imgWrapper.style.maxHeight = "160px";
+
+        if (ad.images && ad.images.length) {
+          var img = document.createElement("img");
+          img.src = ad.images[0];
+          img.alt = ad.title;
+          img.style.width = "100%";
+          img.style.height = "100%";
+          img.style.objectFit = "cover";
+          imgWrapper.appendChild(img);
+
+          if (ad.images.length > 1) {
+            var count = document.createElement("div");
+            count.className = "ad-image-count";
+            count.textContent = "+" + (ad.images.length - 1);
+            imgWrapper.appendChild(count);
+          }
+        } else {
+          imgWrapper.style.display = "flex";
+          imgWrapper.style.alignItems = "center";
+          imgWrapper.style.justifyContent = "center";
+          imgWrapper.textContent = "Ingen bilde";
+        }
+
+        var footer = document.createElement("div");
+        footer.className = "ad-footer-row";
+
+        var footerLeft = document.createElement("div");
+        footerLeft.className = "ad-footer-left";
+
+        var btnDetails = document.createElement("button");
+        btnDetails.className = "btn-small btn-small-primary";
+        btnDetails.type = "button";
+        btnDetails.textContent = "Detaljer";
+        btnDetails.addEventListener("click", function () {
+          openDetailModal(ad);
+        });
+
+        var btnShare = document.createElement("button");
+        btnShare.className = "btn-small btn-small-secondary";
+        btnShare.type = "button";
+        btnShare.textContent = "Del lenke";
+        btnShare.addEventListener("click", function () {
+          if (navigator.share) {
+            navigator
+              .share({
+                title: ad.title,
+                text: "Sjekk ut denne tingen på EkstraVerdi",
+                url: window.location.href
+              })
+              .catch(function () {});
+          } else {
+            window.alert("Kopier lenken i adressefeltet for å dele 🙂");
+          }
+        });
+
+        footerLeft.appendChild(btnDetails);
+        footerLeft.appendChild(btnShare);
+
+        var timeEl = document.createElement("div");
+        timeEl.className = "ad-time";
+        timeEl.textContent = timeAgo(ad.createdAt);
+
+        footer.appendChild(footerLeft);
+        footer.appendChild(timeEl);
+
+        card.appendChild(header);
+        card.appendChild(tagRow);
+        card.appendChild(imgWrapper);
+        card.appendChild(footer);
+
+        adListEl.appendChild(card);
+      })(filtered[k]);
+    }
+  }
+
+  // ---- DETALJMODAL ----
+  function openDetailModal(ad) {
+    if (!detailModal) return;
+
+    detailTitle.textContent = ad.title;
+    detailPrice.textContent =
+      ad.price != null ? ad.price.toLocaleString("nb-NO") + " kr" : "Gi bud";
+    detailStatus.textContent = ad.status === "til-salgs" ? "Til salgs" : "Solgt";
+    detailDescription.textContent =
+      ad.description || "Ingen beskrivelse lagt inn.";
+
+    var extraBits = [];
+    if (ad.buyer) extraBits.push("Kjøper: " + ad.buyer);
+    if (ad.location) extraBits.push("Lagerplass: " + ad.location);
+    detailExtra.textContent = extraBits.join(" • ");
+
+    detailMeta.textContent = "Lagt ut " + formatDateLong(ad.createdAt);
+
+    detailTags.innerHTML = "";
+    var t1 = document.createElement("span");
+    t1.className = "tag-pill tag-pill-primary";
+    t1.textContent = ad.status === "til-salgs" ? "Til salgs" : "Solgt";
+    detailTags.appendChild(t1);
+    if (ad.category) {
+      var t2 = document.createElement("span");
+      t2.className = "tag-pill";
+      t2.textContent = ad.category;
+      detailTags.appendChild(t2);
+    }
+
+    detailThumbs.innerHTML = "";
+    if (ad.images && ad.images.length) {
+      detailMainImage.src = ad.images[0];
+
+      for (var i = 0; i < ad.images.length; i++) {
+        (function (src, idx) {
+          var btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "detail-thumb" + (idx === 0 ? " active" : "");
+          var img = document.createElement("img");
+          img.src = src;
+          btn.appendChild(img);
+          btn.addEventListener("click", function () {
+            detailMainImage.src = src;
+            var children = detailThumbs.children;
+            for (var c = 0; c < children.length; c++) {
+              children[c].classList.remove("active");
+            }
+            btn.classList.add("active");
+          });
+          detailThumbs.appendChild(btn);
+        })(ad.images[i], i);
+      }
+    } else {
+      detailMainImage.src = "";
+    }
+
+    openModal(detailModal);
+  }
+
+  // ---- HJELPEFUNKSJONER ----
+  function timeAgo(iso) {
+    var d = new Date(iso);
+    var diffMs = Date.now() - d.getTime();
+    var mins = Math.floor(diffMs / 60000);
+    var hours = Math.floor(mins / 60);
+    var days = Math.floor(hours / 24);
+
+    if (mins < 1) return "akkurat nå";
+    if (mins < 60) return mins + " min siden";
+    if (hours < 24) return hours + " t siden";
+    if (days === 1) return "i går";
+    return days + " dager siden";
+  }
+
+  function formatDateShort(iso) {
+    var d = new Date(iso);
+    return d.toLocaleDateString("nb-NO");
+  }
+
+  function formatDateLong(iso) {
+    var d = new Date(iso);
+    return d.toLocaleString("nb-NO", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  }
+
+  // ---- INIT ----
+  updateViewHint();
+  renderAds();
+});
