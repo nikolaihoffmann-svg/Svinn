@@ -1,13 +1,14 @@
-// EkstraVerdi – frontend med Supabase-auth + lokale annonser
+// EkstraVerdi – Supabase-auth + Supabase-lagring av annonser (+ fallback lokalt)
 
 // ---- Supabase-konfig ----
 const SUPABASE_URL = "https://biuiczsfripiytmyskub.supabase.co";
-const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY_HERE"; // <-- LIM INN ANON KEY HER
+const SUPABASE_ANON_KEY = "DIN_ANON_KEY_HER"; // <-- LIM INN HELE anon public nøkkelen her
+const ADS_TABLE = "ads"; // endre hvis tabellen din heter noe annet
 
-let supabaseClient = null; // blir satt inni DOMContentLoaded
+let supabaseClient = null;
 
 window.addEventListener("DOMContentLoaded", function () {
-  const STORAGE_KEY = "ekstraverdi_ads_v2";
+  const LOCAL_STORAGE_KEY = "ekstraverdi_ads_backup";
   const THEME_KEY = "ekstraverdi_theme";
 
   // Prøv å lage Supabase-klient uten å krasje hele appen
@@ -18,8 +19,11 @@ window.addEventListener("DOMContentLoaded", function () {
         SUPABASE_ANON_KEY
       );
     } catch (e) {
+      console.error("Feil ved oppretting av Supabase-klient:", e);
       supabaseClient = null;
     }
+  } else {
+    console.warn("Supabase-scriptet er ikke lastet inn.");
   }
 
   // ---- DOM-elementer ----
@@ -65,30 +69,10 @@ window.addEventListener("DOMContentLoaded", function () {
   let editingAdId = null;
   let isAdmin = false;
 
-  // ---------------- STORAGE (annonser lokalt) ----------------
+  // Alle annonser i minnet
+  let ads = [];
 
-  function loadAds() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return [];
-      const parsed = JSON.parse(raw);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch (e) {
-      return [];
-    }
-  }
-
-  function saveAds() {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(ads));
-    } catch (e) {
-      // ignorér
-    }
-  }
-
-  let ads = loadAds();
-
-  // ---------------- TEMA ----------------
+  // =============== TEMA ===============
 
   function applyTheme(theme) {
     if (theme === "dark") {
@@ -122,14 +106,187 @@ window.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // ---------------- ADMIN / AUTH (Supabase) ----------------
+  // =============== LOCAL BACKUP (fallback) ===============
+
+  function loadAdsFromLocalBackup() {
+    try {
+      const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveAdsToLocalBackup() {
+    try {
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(ads));
+    } catch (e) {}
+  }
+
+  // =============== SUPABASE – ANNONSER ===============
+
+  function mapRowToAd(row) {
+    return {
+      id: row.id,
+      title: row.title || "",
+      price: row.price,
+      buyer: row.buyer || null,
+      category: row.category || null,
+      location: row.location || null,
+      description: row.description || "",
+      status: row.status || "til-salgs",
+      images: Array.isArray(row.images) ? row.images : [],
+      createdAt: row.created_at || row.createdAt || new Date().toISOString(),
+    };
+  }
+
+  async function loadAdsFromSupabase() {
+    if (!supabaseClient) {
+      ads = loadAdsFromLocalBackup();
+      renderCurrentView();
+      return;
+    }
+
+    const { data, error } = await supabaseClient
+      .from(ADS_TABLE)
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Feil ved henting av annonser fra Supabase:", error.message);
+      ads = loadAdsFromLocalBackup();
+    } else {
+      ads = data.map(mapRowToAd);
+      saveAdsToLocalBackup(); // ha en backup lokalt
+    }
+    renderCurrentView();
+  }
+
+  async function insertAdToSupabase(payload) {
+    if (!supabaseClient) {
+      // fallback: bare legg lokalt
+      ads.unshift(payload);
+      saveAdsToLocalBackup();
+      renderCurrentView();
+      return;
+    }
+    const { data, error } = await supabaseClient
+      .from(ADS_TABLE)
+      .insert(payload)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Feil ved lagring av annonse:", error.message);
+      // legg inn lokalt likevel
+      ads.unshift(payload);
+    } else {
+      ads.unshift(mapRowToAd(data));
+    }
+    saveAdsToLocalBackup();
+    renderCurrentView();
+  }
+
+  async function updateAdInSupabase(id, changes) {
+    if (!supabaseClient) {
+      const idx = ads.findIndex((a) => a.id === id);
+      if (idx !== -1) {
+        ads[idx] = { ...ads[idx], ...changes };
+        saveAdsToLocalBackup();
+        renderCurrentView();
+      }
+      return;
+    }
+
+    const { data, error } = await supabaseClient
+      .from(ADS_TABLE)
+      .update(changes)
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Feil ved oppdatering av annonse:", error.message);
+      // prøv i minne likevel
+      const idx = ads.findIndex((a) => a.id === id);
+      if (idx !== -1) {
+        ads[idx] = { ...ads[idx], ...changes };
+      }
+    } else {
+      const idx = ads.findIndex((a) => a.id === id);
+      if (idx !== -1) {
+        ads[idx] = mapRowToAd(data);
+      }
+    }
+    saveAdsToLocalBackup();
+    renderCurrentView();
+  }
+
+  async function deleteAdInSupabase(id) {
+    if (!supabaseClient) {
+      ads = ads.filter((a) => a.id !== id);
+      saveAdsToLocalBackup();
+      renderCurrentView();
+      return;
+    }
+
+    const { error } = await supabaseClient
+      .from(ADS_TABLE)
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      console.error("Feil ved sletting:", error.message);
+      return;
+    }
+
+    ads = ads.filter((a) => a.id !== id);
+    saveAdsToLocalBackup();
+    renderCurrentView();
+  }
+
+  // =============== SUPABASE – REALTIME (så andre ser endringer) ===============
+
+  function initRealtime() {
+    if (!supabaseClient) return;
+
+    try {
+      // v2-måte
+      if (typeof supabaseClient.channel === "function") {
+        supabaseClient
+          .channel("ads-changes")
+          .on(
+            "postgres_changes",
+            { event: "*", schema: "public", table: ADS_TABLE },
+            () => {
+              loadAdsFromSupabase();
+            }
+          )
+          .subscribe();
+      }
+      // v1-måte (fallback)
+      else if (typeof supabaseClient.from === "function") {
+        supabaseClient
+          .from(ADS_TABLE)
+          .on("*", () => {
+            loadAdsFromSupabase();
+          })
+          .subscribe();
+      }
+    } catch (e) {
+      console.warn("Klarte ikke å sette opp realtime:", e);
+    }
+  }
+
+  // =============== SUPABASE – AUTH (admin) ===============
 
   function updateAdminUI() {
     if (adminBtn) {
       adminBtn.textContent = isAdmin ? "Logg ut admin" : "Logg inn som admin";
     }
-    // Skjul admin-faner når ikke innlogget
-    adminTabs.forEach(function (tab) {
+    adminTabs.forEach((tab) => {
       tab.style.display = isAdmin ? "" : "none";
     });
     if (!isAdmin && (currentView === "admin" || currentView === "overview")) {
@@ -157,7 +314,6 @@ window.addEventListener("DOMContentLoaded", function () {
   if (adminBtn) {
     adminBtn.addEventListener("click", async function () {
       if (isAdmin) {
-        // Logg ut
         if (supabaseClient) {
           try {
             await supabaseClient.auth.signOut();
@@ -166,7 +322,6 @@ window.addEventListener("DOMContentLoaded", function () {
         isAdmin = false;
         updateAdminUI();
       } else {
-        // Vis login-modal
         adminEmailInput.value = "";
         adminPasswordInput.value = "";
         adminError.style.display = "none";
@@ -191,8 +346,8 @@ window.addEventListener("DOMContentLoaded", function () {
 
     try {
       const result = await supabaseClient.auth.signInWithPassword({
-        email: email,
-        password: password
+        email,
+        password,
       });
 
       if (result.error) {
@@ -213,7 +368,7 @@ window.addEventListener("DOMContentLoaded", function () {
     }
   });
 
-  // ---------------- MODAL-HJELPERE ----------------
+  // =============== MODAL-HJELPERE ===============
 
   function openModal(el) {
     if (!el) return;
@@ -225,21 +380,21 @@ window.addEventListener("DOMContentLoaded", function () {
     el.classList.remove("show");
   }
 
-  document.querySelectorAll("[data-close-modal]").forEach(function (btn) {
-    btn.addEventListener("click", function () {
+  document.querySelectorAll("[data-close-modal]").forEach((btn) => {
+    btn.addEventListener("click", () => {
       const modal = btn.closest(".modal-backdrop");
       closeModal(modal);
     });
   });
 
-  [newAdModal, detailModal, adminLoginModal].forEach(function (modal) {
+  [newAdModal, detailModal, adminLoginModal].forEach((modal) => {
     if (!modal) return;
-    modal.addEventListener("click", function (e) {
+    modal.addEventListener("click", (e) => {
       if (e.target === modal) closeModal(modal);
     });
   });
 
-  // ---------------- VIEW-BYTTING ----------------
+  // =============== VIEW-BYTTING ===============
 
   function setView(view) {
     if ((view === "admin" || view === "overview") && !isAdmin) {
@@ -247,7 +402,7 @@ window.addEventListener("DOMContentLoaded", function () {
     }
     currentView = view;
 
-    navTabs.forEach(function (tab) {
+    navTabs.forEach((tab) => {
       tab.classList.remove("nav-tab-active");
       if (tab.getAttribute("data-view") === view) {
         tab.classList.add("nav-tab-active");
@@ -258,36 +413,34 @@ window.addEventListener("DOMContentLoaded", function () {
     renderCurrentView();
   }
 
-  navTabs.forEach(function (tab) {
-    tab.addEventListener("click", function () {
+  navTabs.forEach((tab) => {
+    tab.addEventListener("click", () => {
       const view = tab.getAttribute("data-view");
       setView(view);
     });
   });
 
-  // ---------------- FILTER ----------------
+  // =============== FILTER ===============
 
   if (searchInput) {
-    searchInput.addEventListener("input", function () {
+    searchInput.addEventListener("input", () => {
       searchTerm = searchInput.value;
       renderCurrentView();
     });
   }
 
-  statusChips.forEach(function (chip) {
-    chip.addEventListener("click", function () {
-      statusChips.forEach(function (c) {
-        c.classList.remove("filter-chip-active");
-      });
+  statusChips.forEach((chip) => {
+    chip.addEventListener("click", () => {
+      statusChips.forEach((c) => c.classList.remove("filter-chip-active"));
       chip.classList.add("filter-chip-active");
       filterStatus = chip.getAttribute("data-status");
       renderCurrentView();
     });
   });
 
-  // ---------------- NY ANNONSE / FAB ----------------
+  // =============== NY ANNONSE / FAB ===============
 
-  fabAdd.addEventListener("click", function () {
+  fabAdd.addEventListener("click", () => {
     editingAdId = null;
     adModalTitle.textContent = "Ny annonse";
     adSubmitBtn.textContent = "Lagre annonse";
@@ -297,15 +450,14 @@ window.addEventListener("DOMContentLoaded", function () {
     openModal(newAdModal);
   });
 
-  // Bildepreview i annonseskjema
   if (imagesInput) {
-    imagesInput.addEventListener("change", function () {
+    imagesInput.addEventListener("change", () => {
       const files = Array.from(imagesInput.files || []);
       newAdImageFiles = files;
       imagePreviewList.innerHTML = "";
-      files.forEach(function (file) {
+      files.forEach((file) => {
         const reader = new FileReader();
-        reader.onload = function (e) {
+        reader.onload = (e) => {
           const div = document.createElement("div");
           div.className = "image-preview-item";
           const img = document.createElement("img");
@@ -318,7 +470,7 @@ window.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // ---------------- LAGRE / REDIGERE ANNONSE ----------------
+  // =============== LAGRE / REDIGERE ANNONSE ===============
 
   newAdForm.addEventListener("submit", function (e) {
     e.preventDefault();
@@ -330,57 +482,39 @@ window.addEventListener("DOMContentLoaded", function () {
     const locationVal = document.getElementById("location").value.trim();
     const description = document.getElementById("description").value.trim();
 
-    const promises = newAdImageFiles.map(function (file) {
-      return new Promise(function (resolve) {
-        const reader = new FileReader();
-        reader.onload = function (evt) {
-          resolve(evt.target.result);
-        };
-        reader.readAsDataURL(file);
-      });
-    });
+    const promises = newAdImageFiles.map(
+      (file) =>
+        new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (evt) => resolve(evt.target.result);
+          reader.readAsDataURL(file);
+        })
+    );
 
-    Promise.all(promises).then(function (images) {
+    Promise.all(promises).then((images) => {
+      const basePayload = {
+        title,
+        price: priceVal ? Number(priceVal) : null,
+        buyer: buyer || null,
+        category: category || null,
+        location: locationVal || null,
+        description: description || "",
+        status: "til-salgs",
+        images,
+      };
+
       if (editingAdId) {
-        // Oppdater eksisterende annonse
-        const ad = ads.find(function (a) {
-          return a.id === editingAdId;
-        });
-        if (ad) {
-          ad.title = title;
-          ad.price = priceVal ? Number(priceVal) : null;
-          ad.buyer = buyer || null;
-          ad.category = category || null;
-          ad.location = locationVal || null;
-          ad.description = description || "";
-          if (newAdImageFiles.length > 0) ad.images = images;
-          saveAds();
-        }
+        updateAdInSupabase(editingAdId, basePayload);
       } else {
-        // Ny annonse
-        const newAd = {
-          id: Date.now().toString(),
-          title: title,
-          price: priceVal ? Number(priceVal) : null,
-          buyer: buyer || null,
-          category: category || null,
-          location: locationVal || null,
-          description: description || "",
-          status: "til-salgs",
-          images: images,
-          createdAt: new Date().toISOString()
-        };
-        ads.unshift(newAd);
-        saveAds();
+        insertAdToSupabase(basePayload);
       }
 
       editingAdId = null;
       closeModal(newAdModal);
-      setView(isAdmin ? "admin" : "sales");
     });
   });
 
-  // ---------------- HJELPEFUNKSJONER ----------------
+  // =============== HJELPEFUNKSJONER ===============
 
   function timeAgo(iso) {
     const d = new Date(iso);
@@ -402,16 +536,17 @@ window.addEventListener("DOMContentLoaded", function () {
       month: "2-digit",
       year: "numeric",
       hour: "2-digit",
-      minute: "2-digit"
+      minute: "2-digit",
     });
   }
 
   function formatCurrency(n) {
+    if (n == null) return "";
     return n.toLocaleString("nb-NO") + " kr";
   }
 
   function filterAdsForList() {
-    return ads.filter(function (ad) {
+    return ads.filter((ad) => {
       if (filterStatus !== "alle" && ad.status !== filterStatus) return false;
       if (!searchTerm) return true;
       const text =
@@ -426,7 +561,7 @@ window.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // ---------------- RENDER LISTE ----------------
+  // =============== RENDER LISTE ===============
 
   function renderList(isAdminList) {
     const list = filterAdsForList();
@@ -438,7 +573,7 @@ window.addEventListener("DOMContentLoaded", function () {
     }
 
     contentArea.innerHTML = "";
-    list.forEach(function (ad) {
+    list.forEach((ad) => {
       const card = document.createElement("article");
       card.className = "ad-card";
 
@@ -519,9 +654,7 @@ window.addEventListener("DOMContentLoaded", function () {
       btnDetails.type = "button";
       btnDetails.className = "btn-link";
       btnDetails.textContent = "Detaljer";
-      btnDetails.addEventListener("click", function () {
-        openDetail(ad);
-      });
+      btnDetails.addEventListener("click", () => openDetail(ad));
       footerLeft.appendChild(btnDetails);
 
       if (!isAdminList) {
@@ -529,9 +662,7 @@ window.addEventListener("DOMContentLoaded", function () {
         btnShare.type = "button";
         btnShare.className = "btn-link";
         btnShare.textContent = "Del lenke";
-        btnShare.addEventListener("click", function () {
-          shareAd(ad);
-        });
+        btnShare.addEventListener("click", () => shareAd(ad));
         footerLeft.appendChild(btnShare);
       }
 
@@ -557,39 +688,31 @@ window.addEventListener("DOMContentLoaded", function () {
         [
           { value: "til-salgs", label: "Til salgs" },
           { value: "reservert", label: "Reservert" },
-          { value: "solgt", label: "Solgt" }
-        ].forEach(function (cfg) {
+          { value: "solgt", label: "Solgt" },
+        ].forEach((cfg) => {
           const opt = document.createElement("option");
           opt.value = cfg.value;
           opt.textContent = cfg.label;
           if (cfg.value === ad.status) opt.selected = true;
           statusSelect.appendChild(opt);
         });
-        statusSelect.addEventListener("change", function () {
-          ad.status = statusSelect.value;
-          saveAds();
-          renderCurrentView();
+        statusSelect.addEventListener("change", () => {
+          updateAdInSupabase(ad.id, { status: statusSelect.value });
         });
 
         const editBtn = document.createElement("button");
         editBtn.type = "button";
         editBtn.className = "btn-link";
         editBtn.textContent = "Rediger";
-        editBtn.addEventListener("click", function () {
-          openEditAd(ad);
-        });
+        editBtn.addEventListener("click", () => openEditAd(ad));
 
         const deleteBtn = document.createElement("button");
         deleteBtn.type = "button";
         deleteBtn.className = "btn-small-danger";
         deleteBtn.textContent = "Slett";
-        deleteBtn.addEventListener("click", function () {
+        deleteBtn.addEventListener("click", () => {
           if (window.confirm("Slette denne annonsen?")) {
-            ads = ads.filter(function (a) {
-              return a.id !== ad.id;
-            });
-            saveAds();
-            renderCurrentView();
+            deleteAdInSupabase(ad.id);
           }
         });
 
@@ -605,7 +728,7 @@ window.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // ---------------- OVERSIKT ----------------
+  // =============== OVERSIKT ===============
 
   function renderOverview() {
     const totalCount = ads.length;
@@ -614,7 +737,7 @@ window.addEventListener("DOMContentLoaded", function () {
     let sumSolgt = 0;
     let countReservert = 0;
 
-    ads.forEach(function (ad) {
+    ads.forEach((ad) => {
       if (ad.price == null) return;
       if (ad.status === "til-salgs") sumTilSalgs += ad.price;
       else if (ad.status === "reservert") {
@@ -660,7 +783,7 @@ window.addEventListener("DOMContentLoaded", function () {
     contentArea.innerHTML = html;
   }
 
-  // ---------------- DETALJMODAL ----------------
+  // =============== DETALJMODAL ===============
 
   function openDetail(ad) {
     detailTitle.textContent = ad.title;
@@ -692,18 +815,18 @@ window.addEventListener("DOMContentLoaded", function () {
     detailThumbs.innerHTML = "";
     if (ad.images && ad.images.length) {
       detailMainImage.src = ad.images[0];
-      ad.images.forEach(function (src, idx) {
+      ad.images.forEach((src, idx) => {
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className = "detail-thumb" + (idx === 0 ? " active" : "");
         const img = document.createElement("img");
         img.src = src;
         btn.appendChild(img);
-        btn.addEventListener("click", function () {
+        btn.addEventListener("click", () => {
           detailMainImage.src = src;
-          Array.from(detailThumbs.children).forEach(function (c) {
-            c.classList.remove("active");
-          });
+          Array.from(detailThumbs.children).forEach((c) =>
+            c.classList.remove("active")
+          );
           btn.classList.add("active");
         });
         detailThumbs.appendChild(btn);
@@ -721,9 +844,9 @@ window.addEventListener("DOMContentLoaded", function () {
         .share({
           title: ad.title,
           text: "Sjekk denne annonsen",
-          url: window.location.href
+          url: window.location.href,
         })
-        .catch(function () {});
+        .catch(() => {});
     } else {
       alert("Kopier lenken i adressefeltet for å dele.");
     }
@@ -745,7 +868,7 @@ window.addEventListener("DOMContentLoaded", function () {
     newAdImageFiles = [];
     imagePreviewList.innerHTML = "";
     if (ad.images && ad.images.length) {
-      ad.images.forEach(function (src) {
+      ad.images.forEach((src) => {
         const div = document.createElement("div");
         div.className = "image-preview-item";
         const img = document.createElement("img");
@@ -758,7 +881,7 @@ window.addEventListener("DOMContentLoaded", function () {
     openModal(newAdModal);
   }
 
-  // ---------------- RENDER CURRENT VIEW ----------------
+  // =============== RENDER CURRENT VIEW ===============
 
   function renderCurrentView() {
     if (currentView === "overview") renderOverview();
@@ -769,4 +892,6 @@ window.addEventListener("DOMContentLoaded", function () {
   // Init
   updateAdminUI();
   setView("sales");
+  loadAdsFromSupabase();
+  initRealtime();
 });
