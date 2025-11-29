@@ -1,15 +1,28 @@
 // EkstraVerdi – frontend med Supabase-auth + lokale annonser
 
-// --- Supabase-oppsett ---
+// ---- Supabase-konfig ----
 const SUPABASE_URL = "https://biuiczsfripiytmyskub.supabase.co";
 const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY_HERE"; // <-- LIM INN ANON KEY HER
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let supabaseClient = null; // blir satt inni DOMContentLoaded
 
 window.addEventListener("DOMContentLoaded", function () {
   const STORAGE_KEY = "ekstraverdi_ads_v2";
   const THEME_KEY = "ekstraverdi_theme";
 
-  // DOM-elementer
+  // Prøv å lage Supabase-klient uten å krasje hele appen
+  if (window.supabase && typeof window.supabase.createClient === "function") {
+    try {
+      supabaseClient = window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_ANON_KEY
+      );
+    } catch (e) {
+      supabaseClient = null;
+    }
+  }
+
+  // ---- DOM-elementer ----
   const navTabs = document.querySelectorAll(".nav-tab");
   const adminTabs = document.querySelectorAll(".admin-tab");
   const filterSection = document.getElementById("filterSection");
@@ -44,7 +57,7 @@ window.addEventListener("DOMContentLoaded", function () {
   const detailExtra = document.getElementById("detailExtra");
   const detailTags = document.getElementById("detailTags");
 
-  // state
+  // ---- state ----
   let currentView = "sales"; // "sales" | "admin" | "overview"
   let filterStatus = "til-salgs";
   let searchTerm = "";
@@ -99,7 +112,7 @@ window.addEventListener("DOMContentLoaded", function () {
   loadTheme();
 
   if (themeToggle) {
-    themeToggle.addEventListener("click", () => {
+    themeToggle.addEventListener("click", function () {
       const isDark = document.body.classList.contains("dark-theme");
       const next = isDark ? "light" : "dark";
       applyTheme(next);
@@ -115,7 +128,8 @@ window.addEventListener("DOMContentLoaded", function () {
     if (adminBtn) {
       adminBtn.textContent = isAdmin ? "Logg ut admin" : "Logg inn som admin";
     }
-    adminTabs.forEach((tab) => {
+    // Skjul admin-faner når ikke innlogget
+    adminTabs.forEach(function (tab) {
       tab.style.display = isAdmin ? "" : "none";
     });
     if (!isAdmin && (currentView === "admin" || currentView === "overview")) {
@@ -124,55 +138,79 @@ window.addEventListener("DOMContentLoaded", function () {
   }
 
   async function initAuthFromSupabase() {
-    const { data } = await supabase.auth.getSession();
-    isAdmin = !!data.session;
+    if (!supabaseClient) {
+      isAdmin = false;
+      updateAdminUI();
+      return;
+    }
+    try {
+      const { data } = await supabaseClient.auth.getSession();
+      isAdmin = !!(data && data.session);
+    } catch (e) {
+      isAdmin = false;
+    }
     updateAdminUI();
   }
 
   initAuthFromSupabase();
 
   if (adminBtn) {
-    adminBtn.addEventListener("click", async () => {
+    adminBtn.addEventListener("click", async function () {
       if (isAdmin) {
         // Logg ut
-        await supabase.auth.signOut();
+        if (supabaseClient) {
+          try {
+            await supabaseClient.auth.signOut();
+          } catch (e) {}
+        }
         isAdmin = false;
         updateAdminUI();
       } else {
         // Vis login-modal
         adminEmailInput.value = "";
         adminPasswordInput.value = "";
-        adminError.textContent = "Feil e-post eller passord.";
         adminError.style.display = "none";
         openModal(adminLoginModal);
       }
     });
   }
 
-  adminLoginForm.addEventListener("submit", async (e) => {
+  adminLoginForm.addEventListener("submit", async function (e) {
     e.preventDefault();
     adminError.style.display = "none";
 
-    const email = adminEmailInput.value.trim();
-    const password = adminPasswordInput.value;
-
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
-
-    if (error) {
-      // viser også Supabase-melding for debugging
+    if (!supabaseClient) {
       adminError.textContent =
-        "Feil e-post eller passord: " + (error.message || "");
+        "Innlogging er ikke satt opp (Supabase-klienten mangler).";
       adminError.style.display = "block";
       return;
     }
 
-    isAdmin = true;
-    updateAdminUI();
-    closeModal(adminLoginModal);
-    setView("admin");
+    const email = adminEmailInput.value.trim();
+    const password = adminPasswordInput.value;
+
+    try {
+      const result = await supabaseClient.auth.signInWithPassword({
+        email: email,
+        password: password
+      });
+
+      if (result.error) {
+        adminError.textContent =
+          "Feil e-post eller passord: " + result.error.message;
+        adminError.style.display = "block";
+        return;
+      }
+
+      isAdmin = true;
+      updateAdminUI();
+      closeModal(adminLoginModal);
+      setView("admin");
+    } catch (err) {
+      adminError.textContent =
+        "Kunne ikke logge inn (nettverksfeil eller lignende).";
+      adminError.style.display = "block";
+    }
   });
 
   // ---------------- MODAL-HJELPERE ----------------
@@ -187,16 +225,16 @@ window.addEventListener("DOMContentLoaded", function () {
     el.classList.remove("show");
   }
 
-  document.querySelectorAll("[data-close-modal]").forEach((btn) => {
-    btn.addEventListener("click", () => {
+  document.querySelectorAll("[data-close-modal]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
       const modal = btn.closest(".modal-backdrop");
       closeModal(modal);
     });
   });
 
-  [newAdModal, detailModal, adminLoginModal].forEach((modal) => {
+  [newAdModal, detailModal, adminLoginModal].forEach(function (modal) {
     if (!modal) return;
-    modal.addEventListener("click", (e) => {
+    modal.addEventListener("click", function (e) {
       if (e.target === modal) closeModal(modal);
     });
   });
@@ -209,7 +247,7 @@ window.addEventListener("DOMContentLoaded", function () {
     }
     currentView = view;
 
-    navTabs.forEach((tab) => {
+    navTabs.forEach(function (tab) {
       tab.classList.remove("nav-tab-active");
       if (tab.getAttribute("data-view") === view) {
         tab.classList.add("nav-tab-active");
@@ -220,8 +258,8 @@ window.addEventListener("DOMContentLoaded", function () {
     renderCurrentView();
   }
 
-  navTabs.forEach((tab) => {
-    tab.addEventListener("click", () => {
+  navTabs.forEach(function (tab) {
+    tab.addEventListener("click", function () {
       const view = tab.getAttribute("data-view");
       setView(view);
     });
@@ -230,15 +268,17 @@ window.addEventListener("DOMContentLoaded", function () {
   // ---------------- FILTER ----------------
 
   if (searchInput) {
-    searchInput.addEventListener("input", () => {
+    searchInput.addEventListener("input", function () {
       searchTerm = searchInput.value;
       renderCurrentView();
     });
   }
 
-  statusChips.forEach((chip) => {
-    chip.addEventListener("click", () => {
-      statusChips.forEach((c) => c.classList.remove("filter-chip-active"));
+  statusChips.forEach(function (chip) {
+    chip.addEventListener("click", function () {
+      statusChips.forEach(function (c) {
+        c.classList.remove("filter-chip-active");
+      });
       chip.classList.add("filter-chip-active");
       filterStatus = chip.getAttribute("data-status");
       renderCurrentView();
@@ -247,7 +287,7 @@ window.addEventListener("DOMContentLoaded", function () {
 
   // ---------------- NY ANNONSE / FAB ----------------
 
-  fabAdd.addEventListener("click", () => {
+  fabAdd.addEventListener("click", function () {
     editingAdId = null;
     adModalTitle.textContent = "Ny annonse";
     adSubmitBtn.textContent = "Lagre annonse";
@@ -259,13 +299,13 @@ window.addEventListener("DOMContentLoaded", function () {
 
   // Bildepreview i annonseskjema
   if (imagesInput) {
-    imagesInput.addEventListener("change", () => {
+    imagesInput.addEventListener("change", function () {
       const files = Array.from(imagesInput.files || []);
       newAdImageFiles = files;
       imagePreviewList.innerHTML = "";
-      files.forEach((file) => {
+      files.forEach(function (file) {
         const reader = new FileReader();
-        reader.onload = (e) => {
+        reader.onload = function (e) {
           const div = document.createElement("div");
           div.className = "image-preview-item";
           const img = document.createElement("img");
@@ -280,7 +320,7 @@ window.addEventListener("DOMContentLoaded", function () {
 
   // ---------------- LAGRE / REDIGERE ANNONSE ----------------
 
-  newAdForm.addEventListener("submit", (e) => {
+  newAdForm.addEventListener("submit", function (e) {
     e.preventDefault();
 
     const title = document.getElementById("title").value.trim();
@@ -290,19 +330,22 @@ window.addEventListener("DOMContentLoaded", function () {
     const locationVal = document.getElementById("location").value.trim();
     const description = document.getElementById("description").value.trim();
 
-    const promises = newAdImageFiles.map(
-      (file) =>
-        new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onload = (evt) => resolve(evt.target.result);
-          reader.readAsDataURL(file);
-        })
-    );
+    const promises = newAdImageFiles.map(function (file) {
+      return new Promise(function (resolve) {
+        const reader = new FileReader();
+        reader.onload = function (evt) {
+          resolve(evt.target.result);
+        };
+        reader.readAsDataURL(file);
+      });
+    });
 
-    Promise.all(promises).then((images) => {
+    Promise.all(promises).then(function (images) {
       if (editingAdId) {
         // Oppdater eksisterende annonse
-        const ad = ads.find((a) => a.id === editingAdId);
+        const ad = ads.find(function (a) {
+          return a.id === editingAdId;
+        });
         if (ad) {
           ad.title = title;
           ad.price = priceVal ? Number(priceVal) : null;
@@ -317,14 +360,14 @@ window.addEventListener("DOMContentLoaded", function () {
         // Ny annonse
         const newAd = {
           id: Date.now().toString(),
-          title,
+          title: title,
           price: priceVal ? Number(priceVal) : null,
           buyer: buyer || null,
           category: category || null,
           location: locationVal || null,
           description: description || "",
           status: "til-salgs",
-          images,
+          images: images,
           createdAt: new Date().toISOString()
         };
         ads.unshift(newAd);
@@ -368,7 +411,7 @@ window.addEventListener("DOMContentLoaded", function () {
   }
 
   function filterAdsForList() {
-    return ads.filter((ad) => {
+    return ads.filter(function (ad) {
       if (filterStatus !== "alle" && ad.status !== filterStatus) return false;
       if (!searchTerm) return true;
       const text =
@@ -395,7 +438,7 @@ window.addEventListener("DOMContentLoaded", function () {
     }
 
     contentArea.innerHTML = "";
-    list.forEach((ad) => {
+    list.forEach(function (ad) {
       const card = document.createElement("article");
       card.className = "ad-card";
 
@@ -476,7 +519,9 @@ window.addEventListener("DOMContentLoaded", function () {
       btnDetails.type = "button";
       btnDetails.className = "btn-link";
       btnDetails.textContent = "Detaljer";
-      btnDetails.addEventListener("click", () => openDetail(ad));
+      btnDetails.addEventListener("click", function () {
+        openDetail(ad);
+      });
       footerLeft.appendChild(btnDetails);
 
       if (!isAdminList) {
@@ -484,7 +529,9 @@ window.addEventListener("DOMContentLoaded", function () {
         btnShare.type = "button";
         btnShare.className = "btn-link";
         btnShare.textContent = "Del lenke";
-        btnShare.addEventListener("click", () => shareAd(ad));
+        btnShare.addEventListener("click", function () {
+          shareAd(ad);
+        });
         footerLeft.appendChild(btnShare);
       }
 
@@ -511,14 +558,14 @@ window.addEventListener("DOMContentLoaded", function () {
           { value: "til-salgs", label: "Til salgs" },
           { value: "reservert", label: "Reservert" },
           { value: "solgt", label: "Solgt" }
-        ].forEach((optCfg) => {
+        ].forEach(function (cfg) {
           const opt = document.createElement("option");
-          opt.value = optCfg.value;
-          opt.textContent = optCfg.label;
-          if (optCfg.value === ad.status) opt.selected = true;
+          opt.value = cfg.value;
+          opt.textContent = cfg.label;
+          if (cfg.value === ad.status) opt.selected = true;
           statusSelect.appendChild(opt);
         });
-        statusSelect.addEventListener("change", () => {
+        statusSelect.addEventListener("change", function () {
           ad.status = statusSelect.value;
           saveAds();
           renderCurrentView();
@@ -528,15 +575,19 @@ window.addEventListener("DOMContentLoaded", function () {
         editBtn.type = "button";
         editBtn.className = "btn-link";
         editBtn.textContent = "Rediger";
-        editBtn.addEventListener("click", () => openEditAd(ad));
+        editBtn.addEventListener("click", function () {
+          openEditAd(ad);
+        });
 
         const deleteBtn = document.createElement("button");
         deleteBtn.type = "button";
         deleteBtn.className = "btn-small-danger";
         deleteBtn.textContent = "Slett";
-        deleteBtn.addEventListener("click", () => {
+        deleteBtn.addEventListener("click", function () {
           if (window.confirm("Slette denne annonsen?")) {
-            ads = ads.filter((a) => a.id !== ad.id);
+            ads = ads.filter(function (a) {
+              return a.id !== ad.id;
+            });
             saveAds();
             renderCurrentView();
           }
@@ -563,17 +614,20 @@ window.addEventListener("DOMContentLoaded", function () {
     let sumSolgt = 0;
     let countReservert = 0;
 
-    ads.forEach((ad) => {
+    ads.forEach(function (ad) {
       if (ad.price == null) return;
       if (ad.status === "til-salgs") sumTilSalgs += ad.price;
       else if (ad.status === "reservert") {
         sumReservert += ad.price;
         countReservert++;
-      } else if (ad.status === "solgt") sumSolgt += ad.price;
+      } else if (ad.status === "solgt") {
+        sumSolgt += ad.price;
+      }
     });
 
     let html = "";
     html += '<div class="overview-grid">';
+
     html += '<div class="overview-card">';
     html += '<div class="overview-title">Totalt antall annonser</div>';
     html += '<div class="overview-value">' + totalCount + "</div>";
@@ -638,18 +692,18 @@ window.addEventListener("DOMContentLoaded", function () {
     detailThumbs.innerHTML = "";
     if (ad.images && ad.images.length) {
       detailMainImage.src = ad.images[0];
-      ad.images.forEach((src, idx) => {
+      ad.images.forEach(function (src, idx) {
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className = "detail-thumb" + (idx === 0 ? " active" : "");
         const img = document.createElement("img");
         img.src = src;
         btn.appendChild(img);
-        btn.addEventListener("click", () => {
+        btn.addEventListener("click", function () {
           detailMainImage.src = src;
-          Array.from(detailThumbs.children).forEach((c) =>
-            c.classList.remove("active")
-          );
+          Array.from(detailThumbs.children).forEach(function (c) {
+            c.classList.remove("active");
+          });
           btn.classList.add("active");
         });
         detailThumbs.appendChild(btn);
@@ -669,7 +723,7 @@ window.addEventListener("DOMContentLoaded", function () {
           text: "Sjekk denne annonsen",
           url: window.location.href
         })
-        .catch(() => {});
+        .catch(function () {});
     } else {
       alert("Kopier lenken i adressefeltet for å dele.");
     }
@@ -691,7 +745,7 @@ window.addEventListener("DOMContentLoaded", function () {
     newAdImageFiles = [];
     imagePreviewList.innerHTML = "";
     if (ad.images && ad.images.length) {
-      ad.images.forEach((src) => {
+      ad.images.forEach(function (src) {
         const div = document.createElement("div");
         div.className = "image-preview-item";
         const img = document.createElement("img");
@@ -713,5 +767,6 @@ window.addEventListener("DOMContentLoaded", function () {
   }
 
   // Init
+  updateAdminUI();
   setView("sales");
 });
