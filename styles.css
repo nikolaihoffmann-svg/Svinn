@@ -46,6 +46,11 @@ body {
   color: #6b7280;
 }
 
+.header-actions {
+  display: flex;
+  gap: 8px;
+}
+
 .text-button {
   border: none;
   background: none;
@@ -153,7 +158,7 @@ body {
   margin-top: 8px;
 }
 
-/* Annonsekort – Finn-aktig, bilde til venstre */
+/* Annonsekort – bilde til venstre */
 
 .ad-card {
   background: #ffffff;
@@ -595,4 +600,139 @@ body {
 
 .detail-actions {
   margin-top: 10px;
+}
+
+/* --------- DARK THEME --------- */
+
+.dark-theme {
+  background: #020617;
+  color: #e5e7eb;
+}
+
+.dark-theme .site-header {
+  background: #111827;
+  border-color: #1f2937;
+}
+
+.dark-theme .brand-name {
+  color: #e5e7eb;
+}
+
+.dark-theme .brand-tagline {
+  color: #9ca3af;
+}
+
+.dark-theme .main-nav {
+  background: transparent;
+}
+
+.dark-theme .nav-tab {
+  background: #020617;
+  border-color: #374151;
+  color: #e5e7eb;
+}
+
+.dark-theme .nav-tab-active {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+}
+
+.dark-theme .page {
+  background: transparent;
+}
+
+.dark-theme .filters,
+.dark-theme .ad-card,
+.dark-theme .overview-card,
+.dark-theme .modal {
+  background: #020617;
+  border-color: #1f2937;
+}
+
+.dark-theme .search-input {
+  background: #020617;
+  border-color: #374151;
+  color: #e5e7eb;
+}
+
+.dark-theme .search-input::placeholder {
+  color: #6b7280;
+}
+
+.dark-theme .filter-chip {
+  background: #020617;
+  border-color: #374151;
+  color: #e5e7eb;
+}
+
+.dark-theme .filter-chip-active {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+}
+
+.dark-theme .ad-thumb {
+  background: #020617;
+}
+
+.dark-theme .ad-title {
+  color: #e5e7eb;
+}
+
+.dark-theme .ad-price {
+  color: #e5e7eb;
+}
+
+.dark-theme .ad-meta {
+  color: #9ca3af;
+}
+
+.dark-theme .tag-pill {
+  background: #020617;
+  border-color: #374151;
+  color: #e5e7eb;
+}
+
+.dark-theme .tag-pill-status-til-salgs {
+  background: #166534;
+  border-color: #22c55e;
+  color: #bbf7d0;
+}
+
+.dark-theme .tag-pill-status-reservert {
+  background: #854d0e;
+  border-color: #facc15;
+  color: #fef9c3;
+}
+
+.dark-theme .tag-pill-status-solgt {
+  background: #1e40af;
+  border-color: #2563eb;
+  color: #dbeafe;
+}
+
+.dark-theme .btn-link,
+.dark-theme .btn-secondary,
+.dark-theme .btn-small-danger {
+  background: #020617;
+  border-color: #374151;
+  color: #e5e7eb;
+}
+
+.dark-theme .overview-title {
+  color: #9ca3af;
+}
+
+.dark-theme .overview-value {
+  color: #e5e7eb;
+}
+
+.dark-theme .overview-sub {
+  color: #6b7280;
+}
+
+.dark-theme .detail-main-image {
+  background: #020617;
+  border-color: #1f2937;
 }
